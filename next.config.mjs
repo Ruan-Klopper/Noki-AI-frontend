@@ -6,6 +6,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-}
+  async rewrites() {
+    return [
+      {
+        source: "/essentials/:path*",
+        destination: "/essentials/:path*",
+      },
+    ];
+  },
+};
 
-export default nextConfig
+export default nextConfig;
