@@ -1,0 +1,168 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Noki brand colors */
+  --noki-primary: #1d72a6;
+  --noki-secondary: #f2f2f2;
+  --noki-tertiary: #fc692b;
+
+  /* Dark theme as default */
+  --background: #0a0e1a;
+  --foreground: #f8fafc;
+  --card: #1a1f2e;
+  --card-foreground: #f8fafc;
+  --popover: #1a1f2e;
+  --popover-foreground: #f8fafc;
+  --primary: var(--noki-primary);
+  --primary-foreground: #ffffff;
+  --secondary: #2a3142;
+  --secondary-foreground: #f8fafc;
+  --muted: #2a3142;
+  --muted-foreground: #94a3b8;
+  --accent: var(--noki-tertiary);
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #2a3142;
+  --input: #2a3142;
+  --ring: var(--noki-primary);
+  --chart-1: var(--noki-primary);
+  --chart-2: var(--noki-tertiary);
+  --chart-3: #8b5cf6;
+  --chart-4: #10b981;
+  --chart-5: #f59e0b;
+  --radius: 0.5rem;
+  --sidebar: #1a1f2e;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: var(--noki-primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a3142;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #2a3142;
+  --sidebar-ring: var(--noki-primary);
+}
+
+@theme inline {
+  /* Updated font variables for Noki brand fonts */
+  --font-sans: var(--font-roboto);
+  --font-heading: var(--font-poppins);
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Added Noki brand utility classes */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.bg-noki-primary {
+  background-color: var(--noki-primary);
+}
+
+.bg-noki-secondary {
+  background-color: var(--noki-secondary);
+}
+
+.bg-noki-tertiary {
+  background-color: var(--noki-tertiary);
+}
+
+.text-noki-primary {
+  color: var(--noki-primary);
+}
+
+.text-noki-secondary {
+  color: var(--noki-secondary);
+}
+
+.text-noki-tertiary {
+  color: var(--noki-tertiary);
+}
+
+.border-noki-primary {
+  border-color: var(--noki-primary);
+}
+
+/* Noki gradient utilities (45° angle as specified) */
+.bg-gradient-noki {
+  background: linear-gradient(45deg, var(--noki-primary), var(--noki-tertiary));
+}
+
+.bg-gradient-noki-subtle {
+  background: linear-gradient(45deg, var(--noki-primary), #2980b9);
+}
+
+/* Added card and modal styling utilities following UI rules */
+.noki-card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-radius: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+}
+
+.noki-modal {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-radius: 20px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 16px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Set default heading font to Poppins */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading font-bold;
+  }
+}
