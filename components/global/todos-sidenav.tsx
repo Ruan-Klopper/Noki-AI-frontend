@@ -1,25 +1,32 @@
-"use client"
-import { ChevronLeft, ChevronRight, Circle, CheckCircle2, BookOpen, FolderKanban } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useState } from "react"
-import Image from "next/image"
-import { ManageProjectsModal } from "./manage-projects-modal"
+"use client";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  CheckCircle2,
+  BookOpen,
+  FolderKanban,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
+import Image from "next/image";
+import { ManageProjectsModal } from "./manage-projects-modal";
 
 interface Todo {
-  id: string
-  title: string
-  project: string
-  time: string
-  day: string
-  completed?: boolean
-  type?: "todo" | "assignment" | "task"
-  parentName?: string
-  assignmentTitle?: string
+  id: string;
+  title: string;
+  project: string;
+  time: string;
+  day: string;
+  completed?: boolean;
+  type?: "todo" | "assignment" | "task";
+  parentName?: string;
+  assignmentTitle?: string;
 }
 
 interface TodosSidenavProps {
-  isCollapsed: boolean
-  onToggle: () => void
+  isCollapsed: boolean;
+  onToggle: () => void;
 }
 
 const projectColors: Record<string, string> = {
@@ -37,11 +44,11 @@ const projectColors: Record<string, string> = {
   "Portfolio Website Redesign": "border-l-blue-500",
   "Mobile App Development": "border-l-cyan-500",
   "Photography Portfolio": "border-l-orange-500",
-}
+};
 
 const getProjectColor = (project: string): string => {
-  return projectColors[project] || "border-l-noki-primary"
-}
+  return projectColors[project] || "border-l-noki-primary";
+};
 
 const todosByDay = [
   {
@@ -196,12 +203,20 @@ const todosByDay = [
       },
     ],
   },
-]
+];
 
-export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProps) {
-  const [todos, setTodos] = useState(todosByDay)
-  const [activeFilter, setActiveFilter] = useState<"today" | "week" | "month">("today")
-  const [isModalOpen, setIsModalOpen] = useState(false)
+export default function TodosSidenav({
+  isCollapsed,
+  onToggle,
+}: TodosSidenavProps) {
+  const [todos, setTodos] = useState(todosByDay);
+  const [activeFilter, setActiveFilter] = useState<"today" | "week" | "month">(
+    "today"
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalInitialTab, setModalInitialTab] = useState<"tasks" | "todos">(
+    "todos"
+  );
 
   const toggleTodoComplete = (dayIndex: number, todoId: string) => {
     setTodos((prev) =>
@@ -209,23 +224,43 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
         idx === dayIndex
           ? {
               ...group,
-              todos: group.todos.map((todo) => (todo.id === todoId ? { ...todo, completed: !todo.completed } : todo)),
+              todos: group.todos.map((todo) =>
+                todo.id === todoId
+                  ? { ...todo, completed: !todo.completed }
+                  : todo
+              ),
             }
-          : group,
-      ),
-    )
-  }
+          : group
+      )
+    );
+  };
 
-  const todayTodos = todos[0]?.todos || []
-  const completedToday = todayTodos.filter((todo) => todo.completed).length
-  const totalToday = todayTodos.length
-  const progressPercentage = totalToday > 0 ? (completedToday / totalToday) * 100 : 0
+  const todayTodos = todos[0]?.todos || [];
+  const completedToday = todayTodos.filter((todo) => todo.completed).length;
+  const totalToday = todayTodos.length;
+  const progressPercentage =
+    totalToday > 0 ? (completedToday / totalToday) * 100 : 0;
 
   const filteredTodos = todos.filter((group) => {
-    if (activeFilter === "today") return group.day === "Today"
-    if (activeFilter === "week") return group.day === "Today" || group.day === "Tomorrow" || group.day === "This Week"
-    return true
-  })
+    if (activeFilter === "today") return group.day === "Today";
+    if (activeFilter === "week")
+      return (
+        group.day === "Today" ||
+        group.day === "Tomorrow" ||
+        group.day === "This Week"
+      );
+    return true;
+  });
+
+  const handleCreateTask = () => {
+    setModalInitialTab("tasks");
+    setIsModalOpen(true);
+  };
+
+  const handleCreateTodo = () => {
+    setModalInitialTab("todos");
+    setIsModalOpen(true);
+  };
 
   return (
     <>
@@ -233,12 +268,17 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
       <aside
         className={cn(
           "hidden md:flex flex-col bg-card border-l border-border transition-all duration-300 ease-in-out h-screen fixed right-0 top-0 z-30",
-          isCollapsed ? "w-16" : "w-80",
+          isCollapsed ? "w-16" : "w-80"
         )}
       >
         {/* Sticky Header */}
         <div className="sticky top-0 bg-card border-b border-border z-10">
-          <div className={cn("relative overflow-hidden", isCollapsed ? "h-16" : "h-24")}>
+          <div
+            className={cn(
+              "relative overflow-hidden",
+              isCollapsed ? "h-16" : "h-24"
+            )}
+          >
             <Image
               src="/placeholder.svg?height=96&width=320"
               alt="Noki Character"
@@ -250,12 +290,18 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
 
           {!isCollapsed && (
             <div className="px-4 py-4">
-              <h2 className="font-poppins font-bold text-xl text-noki-primary">Todos</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Your upcoming tasks</p>
+              <h2 className="font-poppins font-bold text-xl text-noki-primary">
+                Todos
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Your upcoming tasks
+              </p>
 
               <div className="mt-3 space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground font-roboto">Today's Progress</span>
+                  <span className="text-muted-foreground font-roboto">
+                    Today's Progress
+                  </span>
                   <span className="text-foreground font-medium font-roboto">
                     {completedToday}/{totalToday}
                   </span>
@@ -278,7 +324,7 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                     "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium font-roboto transition-all",
                     activeFilter === "today"
                       ? "bg-noki-primary text-white shadow-sm"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                   )}
                 >
                   Today
@@ -289,7 +335,7 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                     "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium font-roboto transition-all",
                     activeFilter === "week"
                       ? "bg-noki-primary text-white shadow-sm"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                   )}
                 >
                   This Week
@@ -300,7 +346,7 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                     "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium font-roboto transition-all",
                     activeFilter === "month"
                       ? "bg-noki-primary text-white shadow-sm"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                   )}
                 >
                   This Month
@@ -330,8 +376,12 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
               {filteredTodos.map((group, groupIndex) => (
                 <div key={group.day} className="space-y-2">
                   <div className="sticky top-0 bg-card px-2 py-1.5 z-10 border-b border-border/50">
-                    <h3 className="font-poppins font-semibold text-sm text-foreground">{group.day}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{group.date}</p>
+                    <h3 className="font-poppins font-semibold text-sm text-foreground">
+                      {group.day}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {group.date}
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">
@@ -345,8 +395,12 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                           todo.completed
                             ? "bg-secondary border-border opacity-60"
                             : "bg-card border-border hover:border-noki-primary hover:shadow-sm",
-                          todo.type === "assignment" && !todo.completed && "bg-blue-500/5",
-                          todo.type === "task" && !todo.completed && "bg-cyan-500/5",
+                          todo.type === "assignment" &&
+                            !todo.completed &&
+                            "bg-blue-500/5",
+                          todo.type === "task" &&
+                            !todo.completed &&
+                            "bg-cyan-500/5"
                         )}
                       >
                         <div className="flex items-start gap-2">
@@ -356,7 +410,8 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                             <Circle className="w-4 h-4 text-muted-foreground group-hover:text-noki-primary transition-colors flex-shrink-0 mt-0.5" />
                           )}
                           <div className="flex-1 min-w-0">
-                            {(todo.type === "assignment" || todo.type === "task") && (
+                            {(todo.type === "assignment" ||
+                              todo.type === "task") && (
                               <div className="flex items-center gap-1.5 mb-1">
                                 {todo.type === "assignment" ? (
                                   <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/20 rounded text-[9px] font-medium text-blue-600">
@@ -376,16 +431,19 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                                 "font-roboto font-medium text-xs line-clamp-2 transition-colors",
                                 todo.completed
                                   ? "text-muted-foreground line-through"
-                                  : "text-foreground group-hover:text-noki-primary",
+                                  : "text-foreground group-hover:text-noki-primary"
                               )}
                             >
                               {todo.title}
                             </h4>
-                            {(todo.type === "assignment" || todo.type === "task") &&
+                            {(todo.type === "assignment" ||
+                              todo.type === "task") &&
                               todo.parentName &&
                               todo.assignmentTitle && (
                                 <p className="text-[9px] text-muted-foreground mt-1 line-clamp-1 font-roboto">
-                                  <span className="font-medium">{todo.parentName}</span>
+                                  <span className="font-medium">
+                                    {todo.parentName}
+                                  </span>
                                   <span className="mx-1">→</span>
                                   <span>{todo.assignmentTitle}</span>
                                 </p>
@@ -397,7 +455,9 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                             )}
                             <div className="flex items-center gap-1 mt-1">
                               <div className="w-1 h-1 rounded-full bg-noki-tertiary" />
-                              <p className="text-[10px] text-foreground font-medium font-roboto">{todo.time}</p>
+                              <p className="text-[10px] text-foreground font-medium font-roboto">
+                                {todo.time}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -406,17 +466,27 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                   </div>
                 </div>
               ))}
-              <div
-                className="group/create relative h-16 flex items-center justify-center cursor-pointer"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <div className="absolute inset-0 opacity-0 group-hover/create:opacity-100 transition-opacity duration-200">
-                  <div className="h-full flex items-center justify-center">
-                    <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 hover:bg-noki-primary/10 hover:border-noki-primary/50 transition-all duration-200">
-                      <p className="text-xs font-medium text-noki-primary font-roboto">+ Create another task/todo</p>
-                    </div>
+              <div className="space-y-2">
+                <button
+                  className="group/create w-full h-12 flex items-center justify-center cursor-pointer hover:bg-cyan-500/5 rounded-lg transition-all"
+                  onClick={handleCreateTask}
+                >
+                  <div className="px-4 py-2 rounded-lg border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 group-hover/create:bg-cyan-500/10 group-hover/create:border-cyan-500/50 transition-all duration-200">
+                    <p className="text-xs font-medium text-cyan-600 font-roboto">
+                      + Create Task
+                    </p>
                   </div>
-                </div>
+                </button>
+                <button
+                  className="group/create w-full h-12 flex items-center justify-center cursor-pointer hover:bg-noki-primary/5 rounded-lg transition-all"
+                  onClick={handleCreateTodo}
+                >
+                  <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200">
+                    <p className="text-xs font-medium text-noki-primary font-roboto">
+                      + Create Todo
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
           ) : (
@@ -429,7 +499,9 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                       key={todo.id}
                       className={cn(
                         "w-2 h-2 rounded-full mx-auto hover:scale-125 transition-transform cursor-pointer",
-                        todo.completed ? "bg-muted-foreground" : "bg-noki-primary",
+                        todo.completed
+                          ? "bg-muted-foreground"
+                          : "bg-noki-primary"
                       )}
                       title={todo.title}
                     />
@@ -443,14 +515,18 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
 
       {/* Mobile Overlay */}
       {!isCollapsed && (
-        <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={onToggle} aria-label="Close todos sidebar" />
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={onToggle}
+          aria-label="Close todos sidebar"
+        />
       )}
 
       {/* Mobile Sidenav */}
       <aside
         className={cn(
           "md:hidden fixed right-0 top-0 h-screen w-80 bg-card border-l border-border z-50 transition-transform duration-300 ease-in-out flex flex-col",
-          isCollapsed ? "translate-x-full" : "translate-x-0",
+          isCollapsed ? "translate-x-full" : "translate-x-0"
         )}
       >
         {/* Sticky Header */}
@@ -467,12 +543,18 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
 
           {/* Title Section */}
           <div className="px-4 py-4">
-            <h2 className="font-poppins font-bold text-xl text-noki-primary">Todos</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Your upcoming tasks</p>
+            <h2 className="font-poppins font-bold text-xl text-noki-primary">
+              Todos
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Your upcoming tasks
+            </p>
 
             <div className="mt-3 space-y-1.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground font-roboto">Today's Progress</span>
+                <span className="text-muted-foreground font-roboto">
+                  Today's Progress
+                </span>
                 <span className="text-foreground font-medium font-roboto">
                   {completedToday}/{totalToday}
                 </span>
@@ -495,7 +577,7 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                   "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium font-roboto transition-all",
                   activeFilter === "today"
                     ? "bg-noki-primary text-white shadow-sm"
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                 )}
               >
                 Today
@@ -506,7 +588,7 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                   "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium font-roboto transition-all",
                   activeFilter === "week"
                     ? "bg-noki-primary text-white shadow-sm"
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                 )}
               >
                 This Week
@@ -517,7 +599,7 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                   "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium font-roboto transition-all",
                   activeFilter === "month"
                     ? "bg-noki-primary text-white shadow-sm"
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                 )}
               >
                 This Month
@@ -542,8 +624,12 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
               <div key={group.day} className="space-y-2">
                 {/* Day Header */}
                 <div className="sticky top-0 bg-card px-2 py-1.5 z-10 border-b border-border/50">
-                  <h3 className="font-poppins font-semibold text-sm text-foreground">{group.day}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">{group.date}</p>
+                  <h3 className="font-poppins font-semibold text-sm text-foreground">
+                    {group.day}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {group.date}
+                  </p>
                 </div>
 
                 {/* Todos */}
@@ -558,8 +644,12 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                         todo.completed
                           ? "bg-secondary border-border opacity-60"
                           : "bg-card border-border hover:border-noki-primary hover:shadow-sm",
-                        todo.type === "assignment" && !todo.completed && "bg-blue-500/5",
-                        todo.type === "task" && !todo.completed && "bg-cyan-500/5",
+                        todo.type === "assignment" &&
+                          !todo.completed &&
+                          "bg-blue-500/5",
+                        todo.type === "task" &&
+                          !todo.completed &&
+                          "bg-cyan-500/5"
                       )}
                     >
                       <div className="flex items-start gap-2">
@@ -569,7 +659,8 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                           <Circle className="w-4 h-4 text-muted-foreground group-hover:text-noki-primary transition-colors flex-shrink-0 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0">
-                          {(todo.type === "assignment" || todo.type === "task") && (
+                          {(todo.type === "assignment" ||
+                            todo.type === "task") && (
                             <div className="flex items-center gap-1.5 mb-1">
                               {todo.type === "assignment" ? (
                                 <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/20 rounded text-[9px] font-medium text-blue-600">
@@ -589,16 +680,19 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                               "font-roboto font-medium text-xs line-clamp-2 transition-colors",
                               todo.completed
                                 ? "text-muted-foreground line-through"
-                                : "text-foreground group-hover:text-noki-primary",
+                                : "text-foreground group-hover:text-noki-primary"
                             )}
                           >
                             {todo.title}
                           </h4>
-                          {(todo.type === "assignment" || todo.type === "task") &&
+                          {(todo.type === "assignment" ||
+                            todo.type === "task") &&
                             todo.parentName &&
                             todo.assignmentTitle && (
                               <p className="text-[9px] text-muted-foreground mt-1 line-clamp-1 font-roboto">
-                                <span className="font-medium">{todo.parentName}</span>
+                                <span className="font-medium">
+                                  {todo.parentName}
+                                </span>
                                 <span className="mx-1">→</span>
                                 <span>{todo.assignmentTitle}</span>
                               </p>
@@ -610,7 +704,9 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                           )}
                           <div className="flex items-center gap-1 mt-1">
                             <div className="w-1 h-1 rounded-full bg-noki-tertiary" />
-                            <p className="text-[10px] text-foreground font-medium font-roboto">{todo.time}</p>
+                            <p className="text-[10px] text-foreground font-medium font-roboto">
+                              {todo.time}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -619,24 +715,38 @@ export default function TodosSidenav({ isCollapsed, onToggle }: TodosSidenavProp
                 </div>
               </div>
             ))}
-            <div
-              className="group/create relative h-16 flex items-center justify-center cursor-pointer"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <div className="absolute inset-0 opacity-0 group-hover/create:opacity-100 transition-opacity duration-200">
-                <div className="h-full flex items-center justify-center">
-                  <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 hover:bg-noki-primary/10 hover:border-noki-primary/50 transition-all duration-200">
-                    <p className="text-xs font-medium text-noki-primary font-roboto">+ Create another task/todo</p>
-                  </div>
+            <div className="space-y-2">
+              <button
+                className="group/create w-full h-12 flex items-center justify-center cursor-pointer hover:bg-cyan-500/5 rounded-lg transition-all"
+                onClick={handleCreateTask}
+              >
+                <div className="px-4 py-2 rounded-lg border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 group-hover/create:bg-cyan-500/10 group-hover/create:border-cyan-500/50 transition-all duration-200">
+                  <p className="text-xs font-medium text-cyan-600 font-roboto">
+                    + Create Task
+                  </p>
                 </div>
-              </div>
+              </button>
+              <button
+                className="group/create w-full h-12 flex items-center justify-center cursor-pointer hover:bg-noki-primary/5 rounded-lg transition-all"
+                onClick={handleCreateTodo}
+              >
+                <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200">
+                  <p className="text-xs font-medium text-noki-primary font-roboto">
+                    + Create Todo
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
       </aside>
 
       {/* ManageProjectsModal Component */}
-      <ManageProjectsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <ManageProjectsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        initialTab={modalInitialTab}
+      />
     </>
-  )
+  );
 }
