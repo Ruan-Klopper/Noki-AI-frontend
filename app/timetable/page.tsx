@@ -1,5 +1,5 @@
-"use client"
-import { useState, useEffect } from "react"
+"use client";
+import { useState, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -11,26 +11,29 @@ import {
   ListTodo,
   ClipboardList,
   CalendarDays,
-} from "lucide-react"
-import { ManageProjectsModal } from "@/components/global/manage-projects-modal"
+} from "lucide-react";
+import { ManageProjectsModal } from "@/components/global/manage-projects-modal";
 
 export default function TimetablePage() {
-  const [currentView, setCurrentView] = useState<"month" | "week" | "day">("week")
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [isSidenavCollapsed, setIsSidenavCollapsed] = useState(false)
-  const [hoveredDay, setHoveredDay] = useState<number | null>(null)
-  const [selectedSubject, setSelectedSubject] = useState("All Subjects")
-  const [selectedType, setSelectedType] = useState("All Types")
-  const [isManageModalOpen, setIsManageModalOpen] = useState(false)
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const [currentView, setCurrentView] = useState<"month" | "week" | "day">(
+    "week"
+  );
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [isSidenavCollapsed, setIsSidenavCollapsed] = useState(false);
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState("All Subjects");
+  const [selectedType, setSelectedType] = useState("All Types");
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 60000)
+      setCurrentTime(new Date());
+    }, 60000);
 
-    return () => clearInterval(timer)
-  }, [])
+    return () => clearInterval(timer);
+  }, []);
 
   const events = [
     {
@@ -117,13 +120,13 @@ export default function TimetablePage() {
       day: "Tuesday",
       type: "event" as const,
     },
-  ]
+  ];
 
   const getDateString = (daysOffset: number) => {
-    const date = new Date()
-    date.setDate(date.getDate() + daysOffset)
-    return date.toISOString().split("T")[0]
-  }
+    const date = new Date();
+    date.setDate(date.getDate() + daysOffset);
+    return date.toISOString().split("T")[0];
+  };
 
   const todos = [
     {
@@ -211,7 +214,7 @@ export default function TimetablePage() {
       borderColor: "border-noki-primary",
       textColor: "text-noki-primary",
     },
-  ]
+  ];
 
   const tasks = [
     {
@@ -332,7 +335,7 @@ export default function TimetablePage() {
       textColor: "text-noki-primary",
       status: "In Progress",
     },
-  ]
+  ];
 
   const assignments = [
     {
@@ -385,19 +388,47 @@ export default function TimetablePage() {
       status: "Not Started",
       color: "bg-noki-tertiary",
     },
-  ]
+  ];
 
-  const subjects = ["All Subjects", "DV300", "PH300", "VC300", "Personal"]
-  const types = ["All Types", "Personal", "Assignment", "Event"]
-  const dateFilters = ["All Dates", "This Week", "Next Week", "This Month"]
+  const subjects = ["All Subjects", "DV300", "PH300", "VC300", "Personal"];
+  const types = ["All Types", "Personal", "Assignment", "Event"];
+  const dateFilters = ["All Dates", "This Week", "Next Week", "This Month"];
 
   const filteredAssignments = assignments
-    .filter((assignment) => selectedSubject === "All Subjects" || assignment.subject === selectedSubject)
-    .filter((assignment) => selectedType === "All Types" || assignment.type === selectedType)
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    .filter(
+      (assignment) =>
+        selectedSubject === "All Subjects" ||
+        assignment.subject === selectedSubject
+    )
+    .filter(
+      (assignment) =>
+        selectedType === "All Types" || assignment.type === selectedType
+    )
+    .sort(
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
 
-  const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-  const timeSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
+  const weekDays = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+  const timeSlots = [
+    "08:00",
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+  ];
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
@@ -405,107 +436,128 @@ export default function TimetablePage() {
       year: "numeric",
       month: "long",
       day: "numeric",
-    })
-  }
+    });
+  };
 
   const navigateDate = (direction: "prev" | "next") => {
-    const newDate = new Date(currentDate)
+    const newDate = new Date(currentDate);
     if (currentView === "month") {
-      newDate.setMonth(newDate.getMonth() + (direction === "next" ? 1 : -1))
+      newDate.setMonth(newDate.getMonth() + (direction === "next" ? 1 : -1));
     } else if (currentView === "week") {
-      newDate.setDate(newDate.getDate() + (direction === "next" ? 7 : -7))
+      newDate.setDate(newDate.getDate() + (direction === "next" ? 7 : -7));
     } else {
-      newDate.setDate(newDate.getDate() + (direction === "next" ? 1 : -1))
+      newDate.setDate(newDate.getDate() + (direction === "next" ? 1 : -1));
     }
-    setCurrentDate(newDate)
-  }
+    setCurrentDate(newDate);
+  };
 
   const timeToMinutes = (time: string): number => {
-    const [hours, minutes] = time.split(":").map(Number)
-    return hours * 60 + minutes
-  }
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
 
-  const doTimesOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
-    const start1Min = timeToMinutes(start1)
-    const end1Min = timeToMinutes(end1)
-    const start2Min = timeToMinutes(start2)
-    const end2Min = timeToMinutes(end2)
+  const doTimesOverlap = (
+    start1: string,
+    end1: string,
+    start2: string,
+    end2: string
+  ): boolean => {
+    const start1Min = timeToMinutes(start1);
+    const end1Min = timeToMinutes(end1);
+    const start2Min = timeToMinutes(start2);
+    const end2Min = timeToMinutes(end2);
 
-    return start1Min < end2Min && start2Min < end1Min
-  }
+    return start1Min < end2Min && start2Min < end1Min;
+  };
 
-  const calculatePrecisePosition = (startTime: string, endTime: string, pixelsPerHour = 64) => {
-    const startMinutes = timeToMinutes(startTime)
-    const endMinutes = timeToMinutes(endTime)
-    const startHour = 8 // Day starts at 8:00
-    const startMinutesFromDayStart = startMinutes - startHour * 60
+  const calculatePrecisePosition = (
+    startTime: string,
+    endTime: string,
+    pixelsPerHour = 64
+  ) => {
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = timeToMinutes(endTime);
+    const startHour = 8; // Day starts at 8:00
+    const startMinutesFromDayStart = startMinutes - startHour * 60;
 
-    const top = (startMinutesFromDayStart / 60) * pixelsPerHour
-    const durationMinutes = endMinutes - startMinutes
-    const height = (durationMinutes / 60) * pixelsPerHour
+    const top = (startMinutesFromDayStart / 60) * pixelsPerHour;
+    const durationMinutes = endMinutes - startMinutes;
+    const height = (durationMinutes / 60) * pixelsPerHour;
 
-    return { top, height }
-  }
+    return { top, height };
+  };
 
   const organizeOverlappingItems = (items: any[]) => {
-    if (items.length === 0) return []
+    if (items.length === 0) return [];
 
     // Sort items by start time
-    const sortedItems = [...items].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime))
+    const sortedItems = [...items].sort(
+      (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
+    );
 
     // Group items that overlap with each other
-    const overlapGroups: any[][] = []
+    const overlapGroups: any[][] = [];
 
     sortedItems.forEach((item) => {
       // Find which group this item belongs to (overlaps with any item in the group)
-      let foundGroup = false
+      let foundGroup = false;
 
       for (const group of overlapGroups) {
         const overlapsWithGroup = group.some((groupItem) =>
-          doTimesOverlap(item.startTime, item.endTime, groupItem.startTime, groupItem.endTime),
-        )
+          doTimesOverlap(
+            item.startTime,
+            item.endTime,
+            groupItem.startTime,
+            groupItem.endTime
+          )
+        );
 
         if (overlapsWithGroup) {
-          group.push(item)
-          foundGroup = true
-          break
+          group.push(item);
+          foundGroup = true;
+          break;
         }
       }
 
       // If no overlapping group found, create a new group
       if (!foundGroup) {
-        overlapGroups.push([item])
+        overlapGroups.push([item]);
       }
-    })
+    });
 
     // For each group, assign columns independently
-    const itemsWithColumns: any[] = []
+    const itemsWithColumns: any[] = [];
 
     overlapGroups.forEach((group) => {
-      const columns: any[][] = []
+      const columns: any[][] = [];
 
       group.forEach((item) => {
-        let placed = false
+        let placed = false;
 
         // Try to place in existing column
         for (let i = 0; i < columns.length; i++) {
-          const column = columns[i]
+          const column = columns[i];
           const hasOverlap = column.some((existingItem) =>
-            doTimesOverlap(item.startTime, item.endTime, existingItem.startTime, existingItem.endTime),
-          )
+            doTimesOverlap(
+              item.startTime,
+              item.endTime,
+              existingItem.startTime,
+              existingItem.endTime
+            )
+          );
 
           if (!hasOverlap) {
-            column.push(item)
-            placed = true
-            break
+            column.push(item);
+            placed = true;
+            break;
           }
         }
 
         // Create new column if couldn't place
         if (!placed) {
-          columns.push([item])
+          columns.push([item]);
         }
-      })
+      });
 
       // Assign column info to each item in this group
       group.forEach((item) => {
@@ -515,83 +567,109 @@ export default function TimetablePage() {
               ...item,
               columnIndex: colIndex,
               totalColumns: columns.length,
-            })
-            break
+            });
+            break;
           }
         }
-      })
-    })
+      });
+    });
 
-    return itemsWithColumns
-  }
+    return itemsWithColumns;
+  };
 
   const getTypeIcon = (type: "todo" | "task" | "event") => {
     switch (type) {
       case "todo":
-        return <ListTodo size={12} className="flex-shrink-0 pt-0" />
+        return <ListTodo size={12} className="flex-shrink-0 pt-0" />;
       case "task":
-        return <ClipboardList size={12} className="flex-shrink-0" />
+        return <ClipboardList size={12} className="flex-shrink-0" />;
       case "event":
-        return <CalendarDays size={12} className="flex-shrink-0" />
+        return <CalendarDays size={12} className="flex-shrink-0" />;
     }
-  }
+  };
 
   const calculateTimeIndicatorPosition = () => {
-    const now = currentTime
-    const hours = now.getHours()
-    const minutes = now.getMinutes()
-    const startHour = 8
+    const now = currentTime;
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const startHour = 8;
 
-    if (hours < startHour || hours >= 18) return null
+    if (hours < startHour || hours >= 18) return null;
 
-    const hoursSinceStart = hours - startHour
-    const minutesFraction = minutes / 60
-    const totalHours = hoursSinceStart + minutesFraction
+    const hoursSinceStart = hours - startHour;
+    const minutesFraction = minutes / 60;
+    const totalHours = hoursSinceStart + minutesFraction;
 
-    return totalHours
-  }
+    return totalHours;
+  };
 
   const getTasksAndTodosForDate = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0]
-    const dateTasks = tasks.filter((task) => task.dueDate === dateStr)
-    const dateTodos = todos.filter((todo) => todo.dueDate === dateStr)
-    return [...dateTasks, ...dateTodos]
-  }
+    const dateStr = date.toISOString().split("T")[0];
+    const dateTasks = tasks.filter((task) => task.dueDate === dateStr);
+    const dateTodos = todos.filter((todo) => todo.dueDate === dateStr);
+    return [...dateTasks, ...dateTodos];
+  };
 
   const renderMonthView = () => {
-    const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
-    const today = new Date()
+    const daysInMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      0
+    ).getDate();
+    const firstDayOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    ).getDay();
+    const today = new Date();
     const isCurrentMonth =
-      today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear()
-    const days = []
+      today.getMonth() === currentDate.getMonth() &&
+      today.getFullYear() === currentDate.getFullYear();
+    const days = [];
 
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push(
-        <div key={`empty-${i}`} className="min-h-16 bg-secondary rounded-lg sm:min-h-[120px] flex items-start"></div>,
-      )
+        <div
+          key={`empty-${i}`}
+          className="min-h-16 bg-secondary rounded-lg sm:min-h-[120px] flex items-start"
+        ></div>
+      );
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dayEvents = events.filter((event) => {
         // Simple filter for demonstration; adjust as needed for actual calendar logic
-        const eventDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-        const eventDayOfWeek = eventDate.toLocaleDateString("en-US", { weekday: "long" })
-        return event.day === eventDayOfWeek
-      })
+        const eventDate = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          day
+        );
+        const eventDayOfWeek = eventDate.toLocaleDateString("en-US", {
+          weekday: "long",
+        });
+        return event.day === eventDayOfWeek;
+      });
 
-      const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      const dayItems = getTasksAndTodosForDate(dayDate)
+      const dayDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        day
+      );
+      const dayItems = getTasksAndTodosForDate(dayDate);
 
       const handleDayClick = () => {
-        const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-        setCurrentDate(selectedDate)
-        setCurrentView("day")
-      }
+        const selectedDate = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          day
+        );
+        setCurrentDate(selectedDate);
+        setCurrentView("day");
+      };
 
-      const isToday = isCurrentMonth && day === today.getDate()
+      const isToday = isCurrentMonth && day === today.getDate();
 
-      const allDayItems = [...dayEvents, ...dayItems]
+      const allDayItems = [...dayEvents, ...dayItems];
 
       days.push(
         <div
@@ -623,7 +701,7 @@ export default function TimetablePage() {
                     {getTypeIcon(item.type)}
                     <span className="truncate">{item.title}</span>
                   </div>
-                )
+                );
               } else {
                 return (
                   <div
@@ -633,7 +711,7 @@ export default function TimetablePage() {
                     {getTypeIcon(item.type)}
                     <span className="truncate">{item.title}</span>
                   </div>
-                )
+                );
               }
             })}
             {dayEvents.slice(0, 2).map((event) => (
@@ -665,42 +743,65 @@ export default function TimetablePage() {
             >
               <div className="mb-3 pb-3 border-b border-border">
                 <h4 className="font-semibold text-foreground text-base">
-                  {dayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                  {dayDate.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                  })}
                 </h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {allDayItems.length} {allDayItems.length === 1 ? "item" : "items"}
+                  {allDayItems.length}{" "}
+                  {allDayItems.length === 1 ? "item" : "items"}
                 </p>
               </div>
 
               <div className="space-y-3">
                 {dayEvents.map((event) => (
-                  <div key={event.id} className="bg-secondary/50 rounded-lg p-3 border border-border/50">
+                  <div
+                    key={event.id}
+                    className="bg-secondary/50 rounded-lg p-3 border border-border/50"
+                  >
                     <div className="flex items-start gap-3 mb-2">
-                      <div className={`${event.color} w-1 h-full rounded-full flex-shrink-0`}></div>
+                      <div
+                        className={`${event.color} w-1 h-full rounded-full flex-shrink-0`}
+                      ></div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           {getTypeIcon(event.type)}
-                          <span className={`${event.color} text-white text-xs px-2 py-0.5 rounded-full font-medium`}>
+                          <span
+                            className={`${event.color} text-white text-xs px-2 py-0.5 rounded-full font-medium`}
+                          >
                             {event.code}
                           </span>
                         </div>
-                        <h5 className="font-semibold text-foreground text-sm leading-tight">{event.title}</h5>
+                        <h5 className="font-semibold text-foreground text-sm leading-tight">
+                          {event.title}
+                        </h5>
                       </div>
                     </div>
 
                     <div className="space-y-1.5 ml-4">
                       <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock size={12} className="text-noki-primary flex-shrink-0" />
+                        <Clock
+                          size={12}
+                          className="text-noki-primary flex-shrink-0"
+                        />
                         <span className="text-xs">
                           {event.startTime} - {event.endTime}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin size={12} className="text-noki-primary flex-shrink-0" />
+                        <MapPin
+                          size={12}
+                          className="text-noki-primary flex-shrink-0"
+                        />
                         <span className="text-xs">{event.location}</span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
-                        <Users size={12} className="text-noki-primary flex-shrink-0" />
+                        <Users
+                          size={12}
+                          className="text-noki-primary flex-shrink-0"
+                        />
                         <span className="text-xs">{event.instructor}</span>
                       </div>
                     </div>
@@ -708,7 +809,10 @@ export default function TimetablePage() {
                 ))}
 
                 {dayItems.map((item) => (
-                  <div key={item.id} className="bg-secondary/50 rounded-lg p-3 border border-border/50">
+                  <div
+                    key={item.id}
+                    className="bg-secondary/50 rounded-lg p-3 border border-border/50"
+                  >
                     <div className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -723,10 +827,15 @@ export default function TimetablePage() {
                             {item.subject}
                           </span>
                         </div>
-                        <h5 className="font-semibold text-foreground text-sm leading-tight mb-1">{item.title}</h5>
+                        <h5 className="font-semibold text-foreground text-sm leading-tight mb-1">
+                          {item.title}
+                        </h5>
                         {!item.allDay && item.startTime && item.endTime && (
                           <div className="flex items-center gap-2 text-muted-foreground ml-4">
-                            <Clock size={12} className="text-noki-primary flex-shrink-0" />
+                            <Clock
+                              size={12}
+                              className="text-noki-primary flex-shrink-0"
+                            />
                             <span className="text-xs">
                               {item.startTime} - {item.endTime}
                             </span>
@@ -734,7 +843,10 @@ export default function TimetablePage() {
                         )}
                         {item.allDay && (
                           <div className="flex items-center gap-2 text-muted-foreground ml-4">
-                            <Calendar size={12} className="text-noki-primary flex-shrink-0" />
+                            <Calendar
+                              size={12}
+                              className="text-noki-primary flex-shrink-0"
+                            />
                             <span className="text-xs">All Day</span>
                           </div>
                         )}
@@ -745,37 +857,40 @@ export default function TimetablePage() {
               </div>
             </div>
           )}
-        </div>,
-      )
+        </div>
+      );
     }
 
     return (
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div key={day} className="p-1 sm:p-2 text-center font-semibold text-muted-foreground text-xs sm:text-sm">
+          <div
+            key={day}
+            className="p-1 sm:p-2 text-center font-semibold text-muted-foreground text-xs sm:text-sm"
+          >
             {day}
           </div>
         ))}
         {days}
       </div>
-    )
-  }
+    );
+  };
 
   const renderWeekView = () => {
-    const timeIndicatorPosition = calculateTimeIndicatorPosition()
-    const weekViewSlotHeight = 64
-    const today = new Date()
+    const timeIndicatorPosition = calculateTimeIndicatorPosition();
+    const weekViewSlotHeight = 80;
+    const today = new Date();
 
     return (
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-noki-primary/30 scrollbar-track-secondary">
-        <div className="grid grid-cols-8 gap-2 sm:gap-4 min-w-[840px]">
+        <div className="grid grid-cols-8 gap-3 sm:gap-6 min-w-[1400px]">
           <div className="space-y-0">
             <div className="h-24"></div>
             <div className="h-8 sm:h-12"></div>
             {timeSlots.map((time) => (
               <div
                 key={time}
-                className="h-16 flex items-start justify-end pr-2 sm:pr-4 text-xs sm:text-sm text-muted-foreground pt-6"
+                className="h-20 flex items-start justify-end pr-2 sm:pr-4 text-xs sm:text-sm text-muted-foreground pt-8"
               >
                 {time}
               </div>
@@ -783,26 +898,30 @@ export default function TimetablePage() {
           </div>
 
           {weekDays.map((day, dayIndex) => {
-            const weekStart = new Date(currentDate)
-            weekStart.setDate(currentDate.getDate() - currentDate.getDay() + 1 + dayIndex)
-            const dayItems = getTasksAndTodosForDate(weekStart)
-            const allDayItems = dayItems.filter((item) => item.allDay)
-            const timedItems = dayItems.filter((item) => !item.allDay)
+            const weekStart = new Date(currentDate);
+            weekStart.setDate(
+              currentDate.getDate() - currentDate.getDay() + 1 + dayIndex
+            );
+            const dayItems = getTasksAndTodosForDate(weekStart);
+            const allDayItems = dayItems.filter((item) => item.allDay);
+            const timedItems = dayItems.filter((item) => !item.allDay);
 
             const isToday =
               weekStart.getDate() === today.getDate() &&
               weekStart.getMonth() === today.getMonth() &&
-              weekStart.getFullYear() === today.getFullYear()
+              weekStart.getFullYear() === today.getFullYear();
 
-            const dayEvents = events.filter((event) => event.day === day)
-            const allTimedItems = [...dayEvents, ...timedItems]
+            const dayEvents = events.filter((event) => event.day === day);
+            const allTimedItems = [...dayEvents, ...timedItems];
 
-            const organizedItems = organizeOverlappingItems(allTimedItems)
+            const organizedItems = organizeOverlappingItems(allTimedItems);
 
             return (
               <div key={day} className="space-y-2 sm:space-y-4">
                 <div className="h-24 bg-secondary/50 rounded-lg p-2 border border-border overflow-y-auto">
-                  <div className="text-[10px] text-muted-foreground mb-1 font-medium">All Day</div>
+                  <div className="text-[10px] text-muted-foreground mb-1 font-medium">
+                    All Day
+                  </div>
                   <div className="space-y-1">
                     {allDayItems.map((item) => {
                       if (item.type === "todo") {
@@ -814,7 +933,7 @@ export default function TimetablePage() {
                             {getTypeIcon(item.type)}
                             <span className="truncate">{item.title}</span>
                           </div>
-                        )
+                        );
                       } else {
                         return (
                           <div
@@ -824,7 +943,7 @@ export default function TimetablePage() {
                             {getTypeIcon(item.type)}
                             <span className="truncate">{item.title}</span>
                           </div>
-                        )
+                        );
                       }
                     })}
                   </div>
@@ -832,42 +951,71 @@ export default function TimetablePage() {
 
                 <div
                   className={`h-8 sm:h-12 flex items-center justify-center rounded-lg transition-all ${
-                    isToday ? "bg-noki-primary/10 border-2 border-noki-primary/30" : ""
+                    isToday
+                      ? "bg-noki-primary/10 border-2 border-noki-primary/30"
+                      : ""
                   }`}
                 >
                   <div className="text-center">
                     <div
                       className={`font-semibold text-xs sm:text-sm truncate ${
-                        isToday ? "text-noki-primary font-bold" : "text-foreground"
+                        isToday
+                          ? "text-noki-primary font-bold"
+                          : "text-foreground"
                       }`}
                     >
                       {day.slice(0, 3)}
                     </div>
-                    <div className={`text-xs ${isToday ? "text-noki-primary" : "text-muted-foreground"}`}>
-                      {weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    <div
+                      className={`text-xs ${
+                        isToday ? "text-noki-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {weekStart.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </div>
                   </div>
                 </div>
 
-                <div className="relative" style={{ height: `${timeSlots.length * weekViewSlotHeight}px` }}>
+                <div
+                  className="relative"
+                  style={{
+                    height: `${timeSlots.length * weekViewSlotHeight}px`,
+                  }}
+                >
                   {timeSlots.map((time, index) => (
                     <div
                       key={time}
                       className="absolute left-0 right-0 border-t border-border"
-                      style={{ top: `${index * weekViewSlotHeight}px`, height: `${weekViewSlotHeight}px` }}
+                      style={{
+                        top: `${index * weekViewSlotHeight}px`,
+                        height: `${weekViewSlotHeight}px`,
+                      }}
                     />
                   ))}
 
                   {organizedItems.map((item) => {
-                    const position = calculatePrecisePosition(item.startTime, item.endTime, weekViewSlotHeight)
-                    const widthPercent = 100 / item.totalColumns
-                    const leftPercent = widthPercent * item.columnIndex
+                    const position = calculatePrecisePosition(
+                      item.startTime,
+                      item.endTime,
+                      weekViewSlotHeight
+                    );
+                    const widthPercent = 100 / item.totalColumns;
+                    const leftPercent = widthPercent * item.columnIndex;
 
                     if (item.type === "event") {
                       return (
                         <div
                           key={item.id}
-                          className={`${item.color} text-white p-2 rounded-lg shadow-md absolute z-10 border-2 border-white/20 overflow-hidden`}
+                          onMouseEnter={() => setHoveredItem(item.id)}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          className={`${
+                            item.color
+                          } text-white p-3 rounded-lg shadow-md absolute border-2 border-white/20 overflow-hidden cursor-pointer hover:shadow-xl transition-shadow ${
+                            hoveredItem === item.id ? "z-[100]" : "z-10"
+                          }`}
                           style={{
                             top: `${position.top}px`,
                             height: `${position.height}px`,
@@ -875,22 +1023,90 @@ export default function TimetablePage() {
                             width: `${widthPercent - 1}%`,
                           }}
                         >
-                          <div className="flex items-center gap-1 mb-1">
+                          <div className="flex items-center gap-2 mb-1">
                             {getTypeIcon(item.type)}
-                            <span className="font-semibold text-xs truncate flex-1 min-w-0">{item.code}</span>
+                            <span className="font-semibold text-sm truncate flex-1 min-w-0">
+                              {item.code}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2 justify-start">
-                            <span className="text-[10px] opacity-90 truncate flex-shrink-0">{item.startTime}</span>
-                            <span className="text-[10px] opacity-90 flex-shrink-0">{item.endTime}</span>
+                          <div className="flex items-center gap-2 justify-between">
+                            <span className="text-xs opacity-90 flex-shrink-0">
+                              {item.startTime}
+                            </span>
+                            <span className="text-xs opacity-90 flex-shrink-0">
+                              {item.endTime}
+                            </span>
                           </div>
-                          <div className="text-[10px] opacity-75 truncate hidden sm:block">{item.location}</div>
+                          <div className="text-xs opacity-75 truncate mt-1">
+                            {item.title}
+                          </div>
+
+                          {hoveredItem === item.id && (
+                            <div
+                              className="fixed z-[9999] w-72 bg-card rounded-xl shadow-2xl border border-border p-4 pointer-events-none"
+                              style={{
+                                left: "50%",
+                                top: "50%",
+                                transform: "translate(-50%, -50%)",
+                              }}
+                            >
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  {getTypeIcon(item.type)}
+                                  <span
+                                    className={`${item.color} text-white text-xs px-2 py-1 rounded-full font-medium`}
+                                  >
+                                    {item.code}
+                                  </span>
+                                </div>
+                                <h5 className="font-semibold text-foreground text-base">
+                                  {item.title}
+                                </h5>
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Clock
+                                      size={14}
+                                      className="text-noki-primary flex-shrink-0"
+                                    />
+                                    <span className="text-sm">
+                                      {item.startTime} - {item.endTime}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <MapPin
+                                      size={14}
+                                      className="text-noki-primary flex-shrink-0"
+                                    />
+                                    <span className="text-sm">
+                                      {item.location}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Users
+                                      size={14}
+                                      className="text-noki-primary flex-shrink-0"
+                                    />
+                                    <span className="text-sm">
+                                      {item.instructor}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )
+                      );
                     } else if (item.type === "todo") {
                       return (
                         <div
                           key={item.id}
-                          className={`border-2 ${item.borderColor} ${item.textColor} bg-card p-2 rounded-lg shadow-md absolute z-10 font-medium overflow-hidden`}
+                          onMouseEnter={() => setHoveredItem(item.id)}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          className={`border-2 ${item.borderColor} ${
+                            item.textColor
+                          } bg-card p-3 rounded-lg shadow-md absolute font-medium overflow-hidden cursor-pointer hover:shadow-xl transition-shadow ${
+                            hoveredItem === item.id ? "z-[100]" : "z-10"
+                          }`}
                           style={{
                             top: `${position.top}px`,
                             height: `${position.height}px`,
@@ -899,21 +1115,65 @@ export default function TimetablePage() {
                           }}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="flex items-center gap-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
                               {getTypeIcon(item.type)}
-                              <span className="font-semibold text-xs truncate">{item.title}</span>
+                              <span className="font-semibold text-sm truncate">
+                                {item.title}
+                              </span>
                             </div>
-                            <span className="text-[10px] opacity-90 flex-shrink-0 whitespace-nowrap">
+                            <span className="text-xs opacity-90 flex-shrink-0 whitespace-nowrap">
                               {item.startTime}
                             </span>
                           </div>
+
+                          {hoveredItem === item.id && (
+                            <div
+                              className="fixed z-[9999] w-72 bg-card rounded-xl shadow-2xl border border-border p-4 pointer-events-none"
+                              style={{
+                                left: "50%",
+                                top: "50%",
+                                transform: "translate(-50%, -50%)",
+                              }}
+                            >
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  {getTypeIcon(item.type)}
+                                  <span
+                                    className={`border-2 ${item.borderColor} ${item.textColor} bg-transparent text-xs px-2 py-1 rounded-full font-medium`}
+                                  >
+                                    {item.subject}
+                                  </span>
+                                </div>
+                                <h5 className="font-semibold text-foreground text-base">
+                                  {item.title}
+                                </h5>
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Clock
+                                      size={14}
+                                      className="text-noki-primary flex-shrink-0"
+                                    />
+                                    <span className="text-sm">
+                                      {item.startTime} - {item.endTime}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )
+                      );
                     } else {
                       return (
                         <div
                           key={item.id}
-                          className={`border-2 ${item.borderColor} ${item.color} bg-opacity-30 text-white p-2 rounded-lg shadow-md absolute z-10 overflow-hidden`}
+                          onMouseEnter={() => setHoveredItem(item.id)}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          className={`border-2 ${item.borderColor} ${
+                            item.color
+                          } bg-opacity-30 text-white p-3 rounded-lg shadow-md absolute z-10 overflow-hidden cursor-pointer hover:shadow-xl transition-shadow ${
+                            hoveredItem === item.id ? "z-[100]" : "z-10"
+                          }`}
                           style={{
                             top: `${position.top}px`,
                             height: `${position.height}px`,
@@ -922,16 +1182,62 @@ export default function TimetablePage() {
                           }}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="flex items-center gap-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
                               {getTypeIcon(item.type)}
-                              <span className="font-semibold text-xs truncate">{item.title}</span>
+                              <span className="font-semibold text-sm truncate">
+                                {item.title}
+                              </span>
                             </div>
-                            <span className="text-[10px] opacity-90 flex-shrink-0 whitespace-nowrap">
+                            <span className="text-xs opacity-90 flex-shrink-0 whitespace-nowrap">
                               {item.startTime}
                             </span>
                           </div>
+
+                          {hoveredItem === item.id && (
+                            <div
+                              className="fixed z-[9999] w-72 bg-card rounded-xl shadow-2xl border border-border p-4 pointer-events-none"
+                              style={{
+                                left: "50%",
+                                top: "50%",
+                                transform: "translate(-50%, -50%)",
+                              }}
+                            >
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  {getTypeIcon(item.type)}
+                                  <span
+                                    className={`${item.color} bg-opacity-30 text-white text-xs px-2 py-1 rounded-full font-medium`}
+                                  >
+                                    {item.subject}
+                                  </span>
+                                </div>
+                                <h5 className="font-semibold text-foreground text-base">
+                                  {item.title}
+                                </h5>
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Clock
+                                      size={14}
+                                      className="text-noki-primary flex-shrink-0"
+                                    />
+                                    <span className="text-sm">
+                                      {item.startTime} - {item.endTime}
+                                    </span>
+                                  </div>
+                                  {item.status && (
+                                    <div className="text-sm text-muted-foreground">
+                                      Status:{" "}
+                                      <span className="font-medium">
+                                        {item.status}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )
+                      );
                     }
                   })}
 
@@ -950,27 +1256,32 @@ export default function TimetablePage() {
                   )}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   const renderDayView = () => {
     // Get events for the current day (assuming 'Monday' is a placeholder and should be dynamic)
-    const currentDayOfWeek = currentDate.toLocaleDateString("en-US", { weekday: "long" })
-    const todayEvents = events.filter((event) => event.day === currentDayOfWeek)
+    const currentDayOfWeek = currentDate.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+    const todayEvents = events.filter(
+      (event) => event.day === currentDayOfWeek
+    );
 
-    const dayItems = getTasksAndTodosForDate(currentDate)
-    const allDayItems = dayItems.filter((item) => item.allDay)
-    const timedItems = dayItems.filter((item) => !item.allDay)
+    const dayItems = getTasksAndTodosForDate(currentDate);
+    const allDayItems = dayItems.filter((item) => item.allDay);
+    const timedItems = dayItems.filter((item) => !item.allDay);
 
-    const timeIndicatorPosition = calculateTimeIndicatorPosition()
-    const dayViewSlotHeight = typeof window !== "undefined" && window.innerWidth < 640 ? 64 : 80
+    const timeIndicatorPosition = calculateTimeIndicatorPosition();
+    const dayViewSlotHeight =
+      typeof window !== "undefined" && window.innerWidth < 640 ? 64 : 80;
 
-    const allTimedItems = [...todayEvents, ...timedItems]
-    const organizedItems = organizeOverlappingItems(allTimedItems)
+    const allTimedItems = [...todayEvents, ...timedItems];
+    const organizedItems = organizeOverlappingItems(allTimedItems);
 
     return (
       <div className="space-y-4 sm:space-y-6">
@@ -992,11 +1303,15 @@ export default function TimetablePage() {
                         >
                           {getTypeIcon(item.type)}
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">{item.title}</div>
-                            <div className="text-xs opacity-75">{item.subject}</div>
+                            <div className="font-medium text-sm truncate">
+                              {item.title}
+                            </div>
+                            <div className="text-xs opacity-75">
+                              {item.subject}
+                            </div>
                           </div>
                         </div>
-                      )
+                      );
                     } else {
                       return (
                         <div
@@ -1005,11 +1320,15 @@ export default function TimetablePage() {
                         >
                           {getTypeIcon(item.type)}
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">{item.title}</div>
-                            <div className="text-xs opacity-75">{item.subject}</div>
+                            <div className="font-medium text-sm truncate">
+                              {item.title}
+                            </div>
+                            <div className="text-xs opacity-75">
+                              {item.subject}
+                            </div>
                           </div>
                         </div>
-                      )
+                      );
                     }
                   })}
                 </div>
@@ -1028,19 +1347,29 @@ export default function TimetablePage() {
                 ))}
               </div>
 
-              <div className="relative" style={{ height: `${timeSlots.length * dayViewSlotHeight}px` }}>
+              <div
+                className="relative"
+                style={{ height: `${timeSlots.length * dayViewSlotHeight}px` }}
+              >
                 {timeSlots.map((time, index) => (
                   <div
                     key={time}
                     className="absolute left-0 right-0 border-t border-border"
-                    style={{ top: `${index * dayViewSlotHeight}px`, height: `${dayViewSlotHeight}px` }}
+                    style={{
+                      top: `${index * dayViewSlotHeight}px`,
+                      height: `${dayViewSlotHeight}px`,
+                    }}
                   />
                 ))}
 
                 {organizedItems.map((item) => {
-                  const position = calculatePrecisePosition(item.startTime, item.endTime, dayViewSlotHeight)
-                  const widthPercent = 100 / item.totalColumns
-                  const leftPercent = widthPercent * item.columnIndex
+                  const position = calculatePrecisePosition(
+                    item.startTime,
+                    item.endTime,
+                    dayViewSlotHeight
+                  );
+                  const widthPercent = 100 / item.totalColumns;
+                  const leftPercent = widthPercent * item.columnIndex;
 
                   if (item.type === "event") {
                     return (
@@ -1057,7 +1386,9 @@ export default function TimetablePage() {
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             {getTypeIcon(item.type)}
-                            <span className="font-semibold text-sm sm:text-base truncate">{item.title}</span>
+                            <span className="font-semibold text-sm sm:text-base truncate">
+                              {item.title}
+                            </span>
                           </div>
                         </div>
                         <div className="text-xs sm:text-sm opacity-90 flex items-center gap-2 mb-1">
@@ -1071,7 +1402,7 @@ export default function TimetablePage() {
                           <span className="truncate">{item.instructor}</span>
                         </div>
                       </div>
-                    )
+                    );
                   } else if (item.type === "todo") {
                     return (
                       <div
@@ -1087,7 +1418,9 @@ export default function TimetablePage() {
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             {getTypeIcon(item.type)}
-                            <span className="font-semibold text-sm sm:text-base truncate">{item.title}</span>
+                            <span className="font-semibold text-sm sm:text-base truncate">
+                              {item.title}
+                            </span>
                           </div>
                         </div>
                         <div className="text-xs sm:text-sm opacity-90 flex items-center justify-between gap-2">
@@ -1097,7 +1430,7 @@ export default function TimetablePage() {
                           </span>
                         </div>
                       </div>
-                    )
+                    );
                   } else {
                     return (
                       <div
@@ -1113,7 +1446,9 @@ export default function TimetablePage() {
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             {getTypeIcon(item.type)}
-                            <span className="font-semibold text-sm sm:text-base truncate">{item.title}</span>
+                            <span className="font-semibold text-sm sm:text-base truncate">
+                              {item.title}
+                            </span>
                           </div>
                         </div>
                         <div className="text-xs sm:text-sm opacity-90 flex items-center justify-between gap-2">
@@ -1123,7 +1458,7 @@ export default function TimetablePage() {
                           </span>
                         </div>
                       </div>
-                    )
+                    );
                   }
                 })}
 
@@ -1145,47 +1480,59 @@ export default function TimetablePage() {
           </div>
 
           <div className="space-y-4 hidden lg:block">
-            <h3 className="font-poppins font-semibold text-lg text-foreground">Today's Schedule</h3>
+            <h3 className="font-poppins font-semibold text-lg text-foreground">
+              Today's Schedule
+            </h3>
             <div className="space-y-3">
               {allDayItems.map((item) => (
-                <div key={item.id} className="bg-card p-4 rounded-xl shadow-sm border border-border">
+                <div
+                  key={item.id}
+                  className="bg-card p-4 rounded-xl shadow-sm border border-border"
+                >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`${
-                          item.type === "todo"
-                            ? `border-2 ${item.borderColor} ${item.textColor} bg-transparent`
-                            : `${item.color} text-white`
-                        } text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1`}
-                      >
-                        {getTypeIcon(item.type)}
-                        {item.subject}
-                      </span>
-                      <span className="text-xs text-muted-foreground">All Day</span>
-                    </div>
+                    <span
+                      className={`${
+                        item.type === "todo"
+                          ? `border-2 ${item.borderColor} ${item.textColor} bg-transparent`
+                          : `${item.color} text-white`
+                      } text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1`}
+                    >
+                      {getTypeIcon(item.type)}
+                      {item.subject}
+                    </span>
                     <div className="font-medium text-foreground flex items-center gap-2">
                       <span className="truncate">{item.title}</span>
                     </div>
+                    <span className="text-xs text-muted-foreground">
+                      All Day
+                    </span>
                   </div>
                 </div>
               ))}
               {todayEvents.map((event) => (
-                <div key={event.id} className="bg-card p-4 rounded-xl shadow-sm border border-border">
+                <div
+                  key={event.id}
+                  className="bg-card p-4 rounded-xl shadow-sm border border-border"
+                >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`${event.color} text-white text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1`}
-                      >
-                        {getTypeIcon(event.type)}
-                        {event.code}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {event.startTime} - {event.endTime}
-                      </span>
+                    <span
+                      className={`${event.color} text-white text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1`}
+                    >
+                      {getTypeIcon(event.type)}
+                      {event.code}
+                    </span>
+                    <div className="font-medium text-foreground truncate">
+                      {event.title}
                     </div>
-                    <div className="font-medium text-foreground truncate">{event.title}</div>
-                    <div className="text-sm text-muted-foreground truncate">{event.location}</div>
-                    <div className="text-sm text-muted-foreground truncate">{event.instructor}</div>
+                    <div className="text-sm text-muted-foreground truncate">
+                      {event.location}
+                    </div>
+                    <div className="text-sm text-muted-foreground truncate">
+                      {event.instructor}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {event.startTime} - {event.endTime}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -1193,15 +1540,17 @@ export default function TimetablePage() {
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="flex gap-4 sm:gap-6">
       <div className="flex-1 space-y-4 sm:space-y-6 min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <p className="text-muted-foreground text-sm sm:text-base truncate">{formatDate(currentDate)}</p>
+            <p className="text-muted-foreground text-sm sm:text-base truncate">
+              {formatDate(currentDate)}
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -1219,7 +1568,9 @@ export default function TimetablePage() {
                   key={view}
                   onClick={() => setCurrentView(view)}
                   className={`px-2 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                    currentView === view ? "bg-noki-primary text-white" : "text-muted-foreground hover:text-foreground"
+                    currentView === view
+                      ? "bg-noki-primary text-white"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {view.charAt(0).toUpperCase() + view.slice(1)}
@@ -1230,12 +1581,21 @@ export default function TimetablePage() {
         </div>
 
         <div className="flex items-center justify-between">
-          <button onClick={() => navigateDate("prev")} className="p-2 hover:bg-secondary rounded-lg transition-colors">
-            <ChevronLeft size={16} className="sm:w-5 sm:h-5 text-muted-foreground" />
+          <button
+            onClick={() => navigateDate("prev")}
+            className="p-2 hover:bg-secondary rounded-lg transition-colors"
+          >
+            <ChevronLeft
+              size={16}
+              className="sm:w-5 sm:h-5 text-muted-foreground"
+            />
           </button>
 
           <div className="flex items-center gap-2">
-            <Calendar size={14} className="sm:w-4 sm:h-4 text-muted-foreground" />
+            <Calendar
+              size={14}
+              className="sm:w-4 sm:h-4 text-muted-foreground"
+            />
             <span className="font-medium text-foreground text-sm sm:text-base truncate">
               {currentDate.toLocaleDateString("en-US", {
                 month: "long",
@@ -1245,8 +1605,14 @@ export default function TimetablePage() {
             </span>
           </div>
 
-          <button onClick={() => navigateDate("next")} className="p-2 hover:bg-secondary rounded-lg transition-colors">
-            <ChevronRight size={16} className="sm:w-5 sm:h-5 text-muted-foreground" />
+          <button
+            onClick={() => navigateDate("next")}
+            className="p-2 hover:bg-secondary rounded-lg transition-colors"
+          >
+            <ChevronRight
+              size={16}
+              className="sm:w-5 sm:h-5 text-muted-foreground"
+            />
           </button>
         </div>
 
@@ -1256,8 +1622,11 @@ export default function TimetablePage() {
           {currentView === "day" && renderDayView()}
         </div>
 
-        <ManageProjectsModal isOpen={isManageModalOpen} onClose={() => setIsManageModalOpen(false)} />
+        <ManageProjectsModal
+          isOpen={isManageModalOpen}
+          onClose={() => setIsManageModalOpen(false)}
+        />
       </div>
     </div>
-  )
+  );
 }
