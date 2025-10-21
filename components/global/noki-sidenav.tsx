@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Calendar,
@@ -17,12 +17,12 @@ import {
   ChevronDown,
   Plus,
   Trash2,
-} from "lucide-react"
+} from "lucide-react";
 
 interface SidenavProps {
-  className?: string
-  isCollapsed: boolean
-  onToggle: () => void
+  className?: string;
+  isCollapsed: boolean;
+  onToggle: () => void;
 }
 
 const mockConversations = [
@@ -31,35 +31,40 @@ const mockConversations = [
   { id: "3", title: "CSS Grid Layout Tips", timestamp: "2 days ago" },
   { id: "4", title: "Next.js App Router Guide", timestamp: "3 days ago" },
   { id: "5", title: "Database Design Questions", timestamp: "1 week ago" },
-]
+];
 
-export default function NokiSidenav({ className = "", isCollapsed, onToggle }: SidenavProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isNavAccordionOpen, setIsNavAccordionOpen] = useState(false)
-  const [activeConversationId, setActiveConversationId] = useState<string | null>("1")
-  const pathname = usePathname()
-  const router = useRouter()
+export default function NokiSidenav({
+  className = "",
+  isCollapsed,
+  onToggle,
+}: SidenavProps) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNavAccordionOpen, setIsNavAccordionOpen] = useState(false);
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >("1");
+  const pathname = usePathname();
+  const router = useRouter();
 
   const navLinks = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/projects", icon: FolderKanban, label: "Projects" },
     { href: "/timetable", icon: Calendar, label: "Timetable" },
-    { href: "/resources", icon: BookOpen, label: "Resources" },
     { href: "/settings", icon: Settings, label: "Settings" },
-  ]
+  ];
 
-  const isActiveLink = (href: string) => pathname === href
+  const isActiveLink = (href: string) => pathname === href;
 
   const handleMobileLinkClick = () => {
-    setIsMobileMenuOpen(false)
-  }
+    setIsMobileMenuOpen(false);
+  };
 
   const handleLogout = () => {
     // Simulate logout
-    router.push("/signin")
-  }
+    router.push("/signin");
+  };
 
-  const isChatActive = pathname === "/chat"
+  const isChatActive = pathname === "/chat";
 
   return (
     <>
@@ -71,9 +76,15 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
         <div className="p-4 border-b border-border flex items-center justify-start px-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-noki-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-poppins font-bold text-lg">N</span>
+              <span className="text-white font-poppins font-bold text-lg">
+                N
+              </span>
             </div>
-            {!isCollapsed && <span className="font-poppins font-bold text-xl text-noki-primary">Noki</span>}
+            {!isCollapsed && (
+              <span className="font-poppins font-bold text-xl text-noki-primary">
+                Noki
+              </span>
+            )}
           </div>
         </div>
 
@@ -87,31 +98,37 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
               >
                 <span className="text-sm font-medium">Navigation</span>
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-300 ${isNavAccordionOpen ? "rotate-180" : ""}`}
+                  className={`w-4 h-4 transition-transform duration-300 ${
+                    isNavAccordionOpen ? "rotate-180" : ""
+                  }`}
                 />
               </button>
               <div
                 className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                  isNavAccordionOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
+                  isNavAccordionOpen
+                    ? "max-h-96 opacity-100 mt-2"
+                    : "max-h-0 opacity-0"
                 }`}
               >
                 <nav className="space-y-2">
                   {navLinks.map((link) => {
-                    const Icon = link.icon
-                    const isActive = isActiveLink(link.href)
+                    const Icon = link.icon;
+                    const isActive = isActiveLink(link.href);
 
                     return (
                       <Link
                         key={link.href}
                         href={link.href}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors font-roboto ${
-                          isActive ? "bg-noki-primary text-white" : "text-foreground hover:bg-secondary"
+                          isActive
+                            ? "bg-noki-primary text-white"
+                            : "text-foreground hover:bg-secondary"
                         }`}
                       >
                         <Icon className="w-5 h-5 flex-shrink-0" />
                         <span>{link.label}</span>
                       </Link>
-                    )
+                    );
                   })}
                 </nav>
               </div>
@@ -119,21 +136,23 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
           ) : (
             <nav className="space-y-2 px-3">
               {navLinks.map((link) => {
-                const Icon = link.icon
-                const isActive = isActiveLink(link.href)
+                const Icon = link.icon;
+                const isActive = isActiveLink(link.href);
 
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors font-roboto ${
-                      isActive ? "bg-noki-primary text-white" : "text-foreground hover:bg-secondary"
+                      isActive
+                        ? "bg-noki-primary text-white"
+                        : "text-foreground hover:bg-secondary"
                     } ${isCollapsed ? "justify-center" : ""}`}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />
                     {!isCollapsed && <span>{link.label}</span>}
                   </Link>
-                )
+                );
               })}
             </nav>
           )}
@@ -150,7 +169,9 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
               } ${isCollapsed ? "justify-center" : ""}`}
             >
               <MessageCircle className="w-5 h-5 flex-shrink-0" />
-              {!isCollapsed && <span className="font-medium">Chat with Noki</span>}
+              {!isCollapsed && (
+                <span className="font-medium">Chat with Noki</span>
+              )}
             </Link>
           </div>
 
@@ -166,43 +187,52 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
               </div>
               <div className="space-y-1">
                 {mockConversations.map((conversation, index) => {
-                  const isActiveConversation = activeConversationId === conversation.id
+                  const isActiveConversation =
+                    activeConversationId === conversation.id;
 
                   return (
                     <div
                       key={conversation.id}
                       onClick={() => setActiveConversationId(conversation.id)}
                       className={`group flex items-start gap-2 px-3 py-2 rounded-lg transition-all cursor-pointer animate-in fade-in slide-in-from-left-2 duration-300 ${
-                        isActiveConversation ? "bg-noki-primary/10 border border-noki-primary/20" : "hover:bg-secondary"
+                        isActiveConversation
+                          ? "bg-noki-primary/10 border border-noki-primary/20"
+                          : "hover:bg-secondary"
                       }`}
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <MessageCircle
                         className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                          isActiveConversation ? "text-noki-primary" : "text-muted-foreground"
+                          isActiveConversation
+                            ? "text-noki-primary"
+                            : "text-muted-foreground"
                         }`}
                       />
                       <div className="flex-1 min-w-0">
                         <p
                           className={`text-sm font-roboto truncate ${
-                            isActiveConversation ? "text-noki-primary font-medium" : "text-foreground"
+                            isActiveConversation
+                              ? "text-noki-primary font-medium"
+                              : "text-foreground"
                           }`}
                         >
                           {conversation.title}
                         </p>
-                        <p className="text-xs font-roboto text-muted-foreground">{conversation.timestamp}</p>
+                        <p className="text-xs font-roboto text-muted-foreground">
+                          {conversation.timestamp}
+                        </p>
                       </div>
                       <button
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
                         onClick={(e) => {
-                          e.stopPropagation()
+                          e.stopPropagation();
                           // Handle delete
                         }}
                       >
                         <Trash2 className="w-3 h-3 text-muted-foreground hover:text-red-500 transition-colors" />
                       </button>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -232,14 +262,24 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
           <div className="border-t border-border" />
 
           <div className="rounded-lg p-2 space-y-1 bg-secondary">
-            <div className={`flex items-center gap-3 px-2 py-2 ${isCollapsed ? "justify-center" : ""}`}>
+            <div
+              className={`flex items-center gap-3 px-2 py-2 ${
+                isCollapsed ? "justify-center" : ""
+              }`}
+            >
               <div className="w-8 h-8 bg-noki-tertiary rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-poppins font-bold text-sm">U</span>
+                <span className="text-white font-poppins font-bold text-sm">
+                  U
+                </span>
               </div>
               {!isCollapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="font-roboto text-sm font-medium text-foreground truncate">Student User</p>
-                  <p className="font-roboto text-xs text-muted-foreground truncate">student@example.com</p>
+                  <p className="font-roboto text-sm font-medium text-foreground truncate">
+                    Student User
+                  </p>
+                  <p className="font-roboto text-xs text-muted-foreground truncate">
+                    student@example.com
+                  </p>
                 </div>
               )}
             </div>
@@ -262,7 +302,9 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
           <div className="w-10 h-10 bg-noki-primary rounded-lg flex items-center justify-center">
             <span className="text-white font-poppins font-bold text-lg">N</span>
           </div>
-          <span className="font-poppins font-bold text-xl text-noki-primary">Noki</span>
+          <span className="font-poppins font-bold text-xl text-noki-primary">
+            Noki
+          </span>
         </div>
 
         <button
@@ -278,15 +320,25 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)}>
-          <div className="bg-card w-80 h-full shadow-lg overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div
+            className="bg-card w-80 h-full shadow-lg overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b border-border flex items-center justify-between">
               {/* Logo */}
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-noki-primary rounded-lg flex items-center justify-center">
-                  <span className="text-white font-poppins font-bold text-lg">N</span>
+                  <span className="text-white font-poppins font-bold text-lg">
+                    N
+                  </span>
                 </div>
-                <span className="font-poppins font-bold text-xl text-noki-primary">Noki</span>
+                <span className="font-poppins font-bold text-xl text-noki-primary">
+                  Noki
+                </span>
               </div>
               {/* Close Button */}
               <button
@@ -306,18 +358,22 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
                   >
                     <span className="text-sm font-medium">Navigation</span>
                     <ChevronDown
-                      className={`w-4 h-4 transition-transform duration-300 ${isNavAccordionOpen ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 transition-transform duration-300 ${
+                        isNavAccordionOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isNavAccordionOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
+                      isNavAccordionOpen
+                        ? "max-h-96 opacity-100 mt-2"
+                        : "max-h-0 opacity-0"
                     }`}
                   >
                     <nav className="space-y-2">
                       {navLinks.map((link) => {
-                        const Icon = link.icon
-                        const isActive = isActiveLink(link.href)
+                        const Icon = link.icon;
+                        const isActive = isActiveLink(link.href);
 
                         return (
                           <Link
@@ -325,13 +381,15 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
                             href={link.href}
                             onClick={handleMobileLinkClick}
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors font-roboto ${
-                              isActive ? "bg-noki-primary text-white" : "text-foreground hover:bg-secondary"
+                              isActive
+                                ? "bg-noki-primary text-white"
+                                : "text-foreground hover:bg-secondary"
                             }`}
                           >
                             <Icon className="w-5 h-5 flex-shrink-0" />
                             <span>{link.label}</span>
                           </Link>
-                        )
+                        );
                       })}
                     </nav>
                   </div>
@@ -339,8 +397,8 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
               ) : (
                 <nav className="space-y-2 px-3">
                   {navLinks.map((link) => {
-                    const Icon = link.icon
-                    const isActive = isActiveLink(link.href)
+                    const Icon = link.icon;
+                    const isActive = isActiveLink(link.href);
 
                     return (
                       <Link
@@ -348,13 +406,15 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
                         href={link.href}
                         onClick={handleMobileLinkClick}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors font-roboto ${
-                          isActive ? "bg-noki-primary text-white" : "text-foreground hover:bg-secondary"
+                          isActive
+                            ? "bg-noki-primary text-white"
+                            : "text-foreground hover:bg-secondary"
                         }`}
                       >
                         <Icon className="w-5 h-5 flex-shrink-0" />
                         <span>{link.label}</span>
                       </Link>
-                    )
+                    );
                   })}
                 </nav>
               )}
@@ -388,14 +448,15 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
                   </div>
                   <div className="space-y-1">
                     {mockConversations.map((conversation, index) => {
-                      const isActiveConversation = activeConversationId === conversation.id
+                      const isActiveConversation =
+                        activeConversationId === conversation.id;
 
                       return (
                         <div
                           key={conversation.id}
                           onClick={() => {
-                            setActiveConversationId(conversation.id)
-                            handleMobileLinkClick()
+                            setActiveConversationId(conversation.id);
+                            handleMobileLinkClick();
                           }}
                           className={`group flex items-start gap-2 px-3 py-2 rounded-lg transition-all cursor-pointer animate-in fade-in slide-in-from-left-2 duration-300 ${
                             isActiveConversation
@@ -406,30 +467,36 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
                         >
                           <MessageCircle
                             className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                              isActiveConversation ? "text-noki-primary" : "text-muted-foreground"
+                              isActiveConversation
+                                ? "text-noki-primary"
+                                : "text-muted-foreground"
                             }`}
                           />
                           <div className="flex-1 min-w-0">
                             <p
                               className={`text-sm font-roboto truncate ${
-                                isActiveConversation ? "text-noki-primary font-medium" : "text-foreground"
+                                isActiveConversation
+                                  ? "text-noki-primary font-medium"
+                                  : "text-foreground"
                               }`}
                             >
                               {conversation.title}
                             </p>
-                            <p className="text-xs font-roboto text-muted-foreground">{conversation.timestamp}</p>
+                            <p className="text-xs font-roboto text-muted-foreground">
+                              {conversation.timestamp}
+                            </p>
                           </div>
                           <button
                             className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
                             onClick={(e) => {
-                              e.stopPropagation()
+                              e.stopPropagation();
                               // Handle delete
                             }}
                           >
                             <Trash2 className="w-3 h-3 text-muted-foreground hover:text-red-500 transition-colors" />
                           </button>
                         </div>
-                      )
+                      );
                     })}
                   </div>
                 </div>
@@ -458,11 +525,17 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
                 <div className="rounded-lg p-2 space-y-1 bg-secondary">
                   <div className="flex items-center gap-3 px-2 py-2">
                     <div className="w-8 h-8 bg-noki-tertiary rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-poppins font-bold text-sm">U</span>
+                      <span className="text-white font-poppins font-bold text-sm">
+                        U
+                      </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-roboto text-sm font-medium text-foreground truncate">Student User</p>
-                      <p className="font-roboto text-xs text-muted-foreground truncate">student@example.com</p>
+                      <p className="font-roboto text-sm font-medium text-foreground truncate">
+                        Student User
+                      </p>
+                      <p className="font-roboto text-xs text-muted-foreground truncate">
+                        student@example.com
+                      </p>
                     </div>
                   </div>
 
@@ -480,5 +553,5 @@ export default function NokiSidenav({ className = "", isCollapsed, onToggle }: S
         </div>
       )}
     </>
-  )
+  );
 }

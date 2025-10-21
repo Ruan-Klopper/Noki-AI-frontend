@@ -27,6 +27,10 @@ export default function TimetablePage() {
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  const [startHour, setStartHour] = useState(6); // Default: 6:00 AM
+  const [endHour, setEndHour] = useState(2); // Default: 2:00 AM (next day)
+  const [timeRangePreset, setTimeRangePreset] = useState("extended");
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -34,6 +38,41 @@ export default function TimetablePage() {
 
     return () => clearInterval(timer);
   }, []);
+
+  const generateTimeSlots = (start: number, end: number): string[] => {
+    const slots: string[] = [];
+    const currentHour = start;
+
+    // Handle wrapping around midnight
+    const totalHours = end < start ? 24 - start + end + 1 : end - start + 1;
+
+    for (let i = 0; i < totalHours; i++) {
+      const hour = (currentHour + i) % 24;
+      slots.push(`${hour.toString().padStart(2, "0")}:00`);
+    }
+
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots(startHour, endHour);
+
+  const handlePresetChange = (preset: string) => {
+    setTimeRangePreset(preset);
+    switch (preset) {
+      case "work":
+        setStartHour(6);
+        setEndHour(18);
+        break;
+      case "extended":
+        setStartHour(6);
+        setEndHour(2);
+        break;
+      case "full":
+        setStartHour(0);
+        setEndHour(23);
+        break;
+    }
+  };
 
   const events = [
     {
@@ -417,18 +456,6 @@ export default function TimetablePage() {
     "Saturday",
     "Sunday",
   ];
-  const timeSlots = [
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-  ];
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
@@ -477,7 +504,6 @@ export default function TimetablePage() {
   ) => {
     const startMinutes = timeToMinutes(startTime);
     const endMinutes = timeToMinutes(endTime);
-    const startHour = 8; // Day starts at 8:00
     const startMinutesFromDayStart = startMinutes - startHour * 60;
 
     const top = (startMinutesFromDayStart / 60) * pixelsPerHour;
@@ -592,11 +618,27 @@ export default function TimetablePage() {
     const now = currentTime;
     const hours = now.getHours();
     const minutes = now.getMinutes();
-    const startHour = 8;
 
-    if (hours < startHour || hours >= 18) return null;
+    const isInRange =
+      endHour < startHour
+        ? hours >= startHour || hours <= endHour
+        : hours >= startHour && hours <= endHour;
 
-    const hoursSinceStart = hours - startHour;
+    if (!isInRange) return null;
+
+    // Calculate hours since start, handling midnight crossover
+    let hoursSinceStart;
+    if (endHour < startHour) {
+      // Range crosses midnight
+      if (hours >= startHour) {
+        hoursSinceStart = hours - startHour;
+      } else {
+        hoursSinceStart = 24 - startHour + hours;
+      }
+    } else {
+      hoursSinceStart = hours - startHour;
+    }
+
     const minutesFraction = minutes / 60;
     const totalHours = hoursSinceStart + minutesFraction;
 
@@ -878,7 +920,8 @@ export default function TimetablePage() {
 
   const renderWeekView = () => {
     const timeIndicatorPosition = calculateTimeIndicatorPosition();
-    const weekViewSlotHeight = 80;
+    const weekViewSlotHeight =
+      typeof window !== "undefined" && window.innerWidth < 640 ? 64 : 80;
     const today = new Date();
 
     return (
@@ -1579,6 +1622,85 @@ export default function TimetablePage() {
             </div>
           </div>
         </div>
+
+        {(currentView === "week" || currentView === "day") && (
+          <div className="bg-card rounded-xl border border-border p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-noki-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  Time Range:
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => handlePresetChange("work")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    timeRangePreset === "work"
+                      ? "bg-noki-primary text-white shadow-md"
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  Work Hours (6AM - 6PM)
+                </button>
+                <button
+                  onClick={() => handlePresetChange("extended")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    timeRangePreset === "extended"
+                      ? "bg-noki-primary text-white shadow-md"
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  Extended (6AM - 2AM)
+                </button>
+                <button
+                  onClick={() => handlePresetChange("full")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    timeRangePreset === "full"
+                      ? "bg-noki-primary text-white shadow-md"
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  Full Day (12AM - 11PM)
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 ml-auto">
+                <label className="text-xs text-muted-foreground">Custom:</label>
+                <select
+                  value={startHour}
+                  onChange={(e) => {
+                    setStartHour(Number(e.target.value));
+                    setTimeRangePreset("custom");
+                  }}
+                  className="px-2 py-1 text-xs rounded-lg border border-border bg-background text-foreground"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i.toString().padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-muted-foreground">to</span>
+                <select
+                  value={endHour}
+                  onChange={(e) => {
+                    setEndHour(Number(e.target.value));
+                    setTimeRangePreset("custom");
+                  }}
+                  className="px-2 py-1 text-xs rounded-lg border border-border bg-background text-foreground"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i.toString().padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center justify-between">
           <button
