@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   AuthService,
   LoginCredentials,
@@ -16,28 +16,16 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [profile, setProfile] = useState<AuthProfile | null>(null);
-  const authService = getAuthService();
 
-  // Check authentication status on mount
-  useEffect(() => {
-    const checkAuthStatus = () => {
-      const authenticated = authService.isAuthenticated();
-      const userData = authService.getCurrentUser();
-
-      setIsAuthenticated(authenticated);
-      setUser(userData);
-      setIsLoading(false);
-
-      // If authenticated, fetch profile data
-      if (authenticated && userData) {
-        fetchProfile();
-      }
-    };
-
-    checkAuthStatus();
-  }, [authService]);
+  // Memoize authService to prevent infinite loops
+  const authService = useMemo(() => getAuthService(), []);
 
   const fetchProfile = useCallback(async (): Promise<void> => {
+    // Only fetch profile if user is authenticated
+    if (!authService.isAuthenticated()) {
+      return;
+    }
+
     try {
       const response = await authService.getProfile();
       if (response.success) {
@@ -48,15 +36,43 @@ export const useAuth = () => {
     }
   }, [authService]);
 
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const authenticated = authService.isAuthenticated();
+      const userData = authService.getCurrentUser();
+
+      setIsAuthenticated(authenticated);
+      setUser(userData);
+      setIsLoading(false);
+
+      // If authenticated, fetch profile data
+      if (authenticated && userData) {
+        await fetchProfile();
+      }
+    };
+
+    checkAuthStatus();
+  }, [fetchProfile]); // Add fetchProfile to dependencies
+
   const login = useCallback(
     async (credentials: LoginCredentials): Promise<ApiResponse<AuthTokens>> => {
       setIsLoading(true);
       try {
         const response = await authService.login(credentials);
         if (response.success) {
+          // Update state immediately
           setIsAuthenticated(true);
           setUser(response.data.user);
-          await fetchProfile();
+
+          // Wait a bit for cookies to be set, then fetch profile
+          setTimeout(async () => {
+            try {
+              await fetchProfile();
+            } catch (error) {
+              console.error("Failed to fetch profile after login:", error);
+            }
+          }, 100);
         }
         return response;
       } catch (error) {
@@ -77,9 +93,21 @@ export const useAuth = () => {
       try {
         const response = await authService.register(userData);
         if (response.success) {
+          // Update state immediately
           setIsAuthenticated(true);
           setUser(response.data.user);
-          await fetchProfile();
+
+          // Wait a bit for cookies to be set, then fetch profile
+          setTimeout(async () => {
+            try {
+              await fetchProfile();
+            } catch (error) {
+              console.error(
+                "Failed to fetch profile after registration:",
+                error
+              );
+            }
+          }, 100);
         }
         return response;
       } catch (error) {
@@ -100,9 +128,21 @@ export const useAuth = () => {
       try {
         const response = await authService.googleAuth(idToken);
         if (response.success) {
+          // Update state immediately
           setIsAuthenticated(true);
           setUser(response.data.user);
-          await fetchProfile();
+
+          // Wait a bit for cookies to be set, then fetch profile
+          setTimeout(async () => {
+            try {
+              await fetchProfile();
+            } catch (error) {
+              console.error(
+                "Failed to fetch profile after Google auth:",
+                error
+              );
+            }
+          }, 100);
         }
         return response;
       } catch (error) {

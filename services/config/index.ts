@@ -1,6 +1,8 @@
 import { ApiConfig, ApiResponse, ApiError } from "../types";
 import { CookieManager } from "./cookie-manager";
 
+// Configuration module for API settings and utilities
+
 // Configuration for different environments
 const configs: Record<string, ApiConfig> = {
   development: {

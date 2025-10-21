@@ -1,0 +1,65 @@
+/* Custom Google Sign-In Button Styles */
+
+/* Container styling */
+.google-signin-container {
+  /* Custom container styles */
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+/* Override Google's default button styles */
+.google-signin-container iframe {
+  /* Custom iframe styling */
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+}
+
+.google-signin-container iframe:hover {
+  /* Hover effects */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Alternative: Style the button after it renders */
+.google-signin-container div[role="button"] {
+  /* Direct button styling */
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+  font-family: "Inter", sans-serif !important;
+}
+
+.google-signin-container div[role="button"]:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Custom theme variations */
+.google-signin-container.theme-custom {
+  /* Custom theme styles */
+}
+
+.google-signin-container.theme-custom iframe {
+  border: 2px solid #4285f4 !important;
+  background: linear-gradient(135deg, #4285f4, #34a853) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .google-signin-container {
+    width: 100% !important;
+  }
+
+  .google-signin-container iframe {
+    width: 100% !important;
+    height: 48px !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .google-signin-container iframe {
+    filter: brightness(0.9) !important;
+  }
+}

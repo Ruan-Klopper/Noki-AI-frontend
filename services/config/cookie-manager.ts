@@ -2,6 +2,7 @@
 export class CookieManager {
   private static readonly ACCESS_TOKEN_KEY = "access_token";
   private static readonly USER_DATA_KEY = "user_data";
+  private static readonly PROFILE_DATA_KEY = "profile_data";
 
   // Set HTTP-only cookie (server-side only)
   static setHttpOnlyCookie(
@@ -124,9 +125,35 @@ export class CookieManager {
     this.deleteCookie(this.USER_DATA_KEY);
   }
 
+  // Profile data management methods
+  static setProfileData(profileData: any): void {
+    this.setCookie(this.PROFILE_DATA_KEY, JSON.stringify(profileData), {
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+  }
+
+  static getProfileData(): any | null {
+    const profileData = this.getCookie(this.PROFILE_DATA_KEY);
+    if (profileData) {
+      try {
+        return JSON.parse(profileData);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  static clearProfileData(): void {
+    this.deleteCookie(this.PROFILE_DATA_KEY);
+  }
+
   static clearAllAuthData(): void {
     this.clearAccessToken();
     this.clearUserData();
+    this.clearProfileData();
   }
 
   // Check if token is expired (basic JWT check)

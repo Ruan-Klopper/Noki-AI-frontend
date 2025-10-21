@@ -19,6 +19,7 @@ interface AuthContextType {
   isLoading: boolean;
   user: UserProfile | null;
   profile: AuthProfile | null;
+  googleLoading: boolean;
 
   // Actions
   login: (credentials: LoginCredentials) => Promise<ApiResponse<AuthTokens>>;
@@ -30,7 +31,7 @@ interface AuthContextType {
   // Google OAuth
   initializeGoogleAuth: () => Promise<void>;
   renderGoogleButton: (elementId: string, options?: any) => void;
-  promptGoogleSignIn: () => void;
+  stopGoogleLoading: () => void;
 }
 
 // Create Auth Context
@@ -45,19 +46,83 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const authHook = useAuth();
   const [googleInitialized, setGoogleInitialized] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  // Initialize Google OAuth
+  // Initialize Google OAuth (silent initialization, no loading states)
   const initializeGoogleAuth = async (): Promise<void> => {
     if (googleInitialized) return;
 
     try {
+      // First, get the Google Client ID from the server
+      const response = await fetch("/api/auth/google/client-id");
+      if (!response.ok) {
+        throw new Error("Failed to get Google Client ID from server");
+      }
+      const { clientId } = await response.json();
+
+      // Set the client ID in GoogleAuth
+      GoogleAuth.setClientId(clientId);
+
+      // Initialize Google OAuth silently (no loading states)
+      console.log("Initializing Google OAuth silently...");
       await GoogleAuth.initialize();
-      GoogleAuth.setCallback((credential: string) => {
-        authHook.googleAuth(credential);
+
+      GoogleAuth.setCallback(async (credential: string) => {
+        try {
+          // Verify the token with our server
+          const response = await fetch("/api/auth/google/token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ idToken: credential }),
+          });
+
+          if (response.ok) {
+            const { user } = await response.json();
+            console.log("Google authentication successful:", user);
+            // Call the auth hook with the verified user data
+            const authResponse = await authHook.googleAuth(credential);
+
+            // If authentication was successful, redirect based on context
+            if (authResponse.success) {
+              console.log(
+                "Google authentication completed, determining redirect..."
+              );
+
+              // Check if we're on signup page and redirect to step 3 (LMS Selection)
+              if (window.location.pathname === "/signup") {
+                console.log("Redirecting to signup step 3 (LMS Selection)...");
+                // For signup, we need to stay on the same page but go to step 3
+                // This will be handled by the signup page component
+                window.location.href = "/signup?step=3";
+              } else {
+                console.log("Redirecting to dashboard...");
+                // For signin, redirect to dashboard
+                window.location.href = "/dashboard";
+              }
+            }
+          } else {
+            console.error("Token verification failed");
+            throw new Error("Token verification failed");
+          }
+        } catch (error) {
+          console.error("Error in Google auth callback:", error);
+          // Still call the auth hook to handle the error
+          await authHook.googleAuth(credential);
+        }
       });
+
+      // Set the stop loading function on window for Google Auth to use
+      if (typeof window !== "undefined") {
+        (window as any).stopGoogleLoading = stopGoogleLoading;
+      }
+
       setGoogleInitialized(true);
+      console.log("Google OAuth initialized successfully with FedCM support");
     } catch (error) {
       console.error("Failed to initialize Google OAuth:", error);
+      throw error; // Re-throw to allow calling code to handle the error
     }
   };
 
@@ -70,13 +135,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     GoogleAuth.renderButton(elementId, options);
   };
 
-  // Prompt Google sign-in
-  const promptGoogleSignIn = (): void => {
-    if (!googleInitialized) {
-      console.warn("Google OAuth not initialized");
-      return;
-    }
-    GoogleAuth.prompt();
+  // Stop Google loading state
+  const stopGoogleLoading = (): void => {
+    setGoogleLoading(false);
   };
 
   // Initialize Google OAuth on mount
@@ -97,6 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading: authHook.isLoading,
     user: authHook.user,
     profile: authHook.profile,
+    googleLoading,
 
     // Actions
     login: authHook.login,
@@ -108,7 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Google OAuth
     initializeGoogleAuth,
     renderGoogleButton,
-    promptGoogleSignIn,
+    stopGoogleLoading,
   };
 
   return (
