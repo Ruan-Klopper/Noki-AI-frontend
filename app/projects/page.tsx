@@ -1,23 +1,40 @@
-"use client"
+"use client";
 
-import { NokiCard } from "@/components/global/noki-card"
-import { TaskItem } from "@/components/global/task-item"
-import { FolderKanban, BookOpen, ChevronDown, ChevronRight, Plus, LayoutGrid, List } from "lucide-react"
-import { useState, useMemo } from "react"
-import { ManageProjectsModal } from "@/components/global/manage-projects-modal"
+import { NokiCard } from "@/components/global/noki-card";
+import { TaskItem } from "@/components/global/task-item";
+import {
+  FolderKanban,
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  LayoutGrid,
+  List,
+} from "lucide-react";
+import { useState, useMemo } from "react";
+import { ManageProjectsModal } from "@/components/global/manage-projects-modal";
 
 export default function ProjectsPage() {
-  const [expandedCourse, setExpandedCourse] = useState<string | null>(null)
-  const [expandedProject, setExpandedProject] = useState<string | null>(null)
-  const [expandedAssignment, setExpandedAssignment] = useState<string | null>(null)
-  const [expandedTask, setExpandedTask] = useState<string | null>(null)
-  const [expandedDescription, setExpandedDescription] = useState<string | null>(null)
-  const [isManageModalOpen, setIsManageModalOpen] = useState<boolean>(false)
-  const [viewMode, setViewMode] = useState<"grouped" | "all">("grouped")
-  const [editingItem, setEditingItem] = useState<any>(null)
-  const [editingType, setEditingType] = useState<"project" | "course" | null>(null)
+  const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [expandedAssignment, setExpandedAssignment] = useState<string | null>(
+    null
+  );
+  const [expandedTask, setExpandedTask] = useState<string | null>(null);
+  const [expandedDescription, setExpandedDescription] = useState<string | null>(
+    null
+  );
+  const [isManageModalOpen, setIsManageModalOpen] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<"grouped" | "all">("grouped");
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingType, setEditingType] = useState<"project" | "course" | null>(
+    null
+  );
 
-  const assignmentTodos: Record<string, Array<{ id: string; title: string; completed: boolean }>> = {
+  const assignmentTodos: Record<
+    string,
+    Array<{ id: string; title: string; completed: boolean }>
+  > = {
     "c1-1": [
       { id: "c1-1-t1", title: "Research competitor apps", completed: true },
       { id: "c1-1-t2", title: "Create user personas", completed: false },
@@ -46,7 +63,11 @@ export default function ProjectsPage() {
       { id: "c2-3-t2", title: "Write artist statement", completed: false },
     ],
     "c3-1": [
-      { id: "c3-1-t1", title: "Research visual culture theory", completed: false },
+      {
+        id: "c3-1-t1",
+        title: "Research visual culture theory",
+        completed: false,
+      },
       { id: "c3-1-t2", title: "Write first draft", completed: false },
     ],
     "c3-2": [
@@ -61,16 +82,23 @@ export default function ProjectsPage() {
       { id: "c4-2-t1", title: "Brainstorm project ideas", completed: false },
       { id: "c4-2-t2", title: "Write proposal outline", completed: false },
     ],
-  }
+  };
 
-  const taskTodos: Record<string, Array<{ id: string; title: string; completed: boolean }>> = {
+  const taskTodos: Record<
+    string,
+    Array<{ id: string; title: string; completed: boolean }>
+  > = {
     "p1-1": [
       { id: "p1-1-t1", title: "Create mood board", completed: true },
       { id: "p1-1-t2", title: "Sketch layout options", completed: false },
       { id: "p1-1-t3", title: "Get feedback from peers", completed: false },
     ],
     "p1-2": [
-      { id: "p1-2-t1", title: "Research dark mode best practices", completed: true },
+      {
+        id: "p1-2-t1",
+        title: "Research dark mode best practices",
+        completed: true,
+      },
       { id: "p1-2-t2", title: "Implement theme toggle", completed: true },
     ],
     "p1-3": [
@@ -79,7 +107,11 @@ export default function ProjectsPage() {
     ],
     "p2-1": [
       { id: "p2-1-t1", title: "Sketch user flows", completed: true },
-      { id: "p2-1-t2", title: "Create low-fidelity wireframes", completed: true },
+      {
+        id: "p2-1-t2",
+        title: "Create low-fidelity wireframes",
+        completed: true,
+      },
     ],
     "p2-2": [
       { id: "p2-2-t1", title: "Install React Native CLI", completed: false },
@@ -101,7 +133,7 @@ export default function ProjectsPage() {
       { id: "p3-3-t1", title: "Choose gallery template", completed: false },
       { id: "p3-3-t2", title: "Arrange photos", completed: false },
     ],
-  }
+  };
 
   const personalProjects = [
     {
@@ -259,7 +291,7 @@ export default function ProjectsPage() {
         },
       ],
     },
-  ]
+  ];
 
   const canvasCourses = [
     {
@@ -406,20 +438,20 @@ export default function ProjectsPage() {
         },
       ],
     },
-  ]
+  ];
 
   const allItemsSorted = useMemo(() => {
     const allItems: Array<{
-      id: string
-      title: string
-      dueDate: string
-      completed: boolean
-      description: string
-      type: "assignment" | "task"
-      parentName: string
-      parentColor: string
-      parentCode?: string
-    }> = []
+      id: string;
+      title: string;
+      dueDate: string;
+      completed: boolean;
+      description: string;
+      type: "assignment" | "task";
+      parentName: string;
+      parentColor: string;
+      parentCode?: string;
+    }> = [];
 
     // Add all assignments
     canvasCourses.forEach((course) => {
@@ -430,9 +462,9 @@ export default function ProjectsPage() {
           parentName: course.name,
           parentColor: course.color,
           parentCode: course.code,
-        })
-      })
-    })
+        });
+      });
+    });
 
     // Add all tasks
     personalProjects.forEach((project) => {
@@ -442,63 +474,69 @@ export default function ProjectsPage() {
           type: "task",
           parentName: project.name,
           parentColor: project.color,
-        })
-      })
-    })
+        });
+      });
+    });
 
     // Sort by due date
     return allItems.sort((a, b) => {
-      const dateA = new Date(a.dueDate + " 2024")
-      const dateB = new Date(b.dueDate + " 2024")
-      return dateA.getTime() - dateB.getTime()
-    })
-  }, [])
+      const dateA = new Date(a.dueDate + " 2024");
+      const dateB = new Date(b.dueDate + " 2024");
+      return dateA.getTime() - dateB.getTime();
+    });
+  }, []);
 
   const toggleCourse = (courseId: string) => {
-    setExpandedCourse(expandedCourse === courseId ? null : courseId)
-  }
+    setExpandedCourse(expandedCourse === courseId ? null : courseId);
+  };
 
   const toggleProject = (projectId: string) => {
-    setExpandedProject(expandedProject === projectId ? null : projectId)
-  }
+    setExpandedProject(expandedProject === projectId ? null : projectId);
+  };
 
   const toggleAssignment = (assignmentId: string) => {
-    setExpandedAssignment(expandedAssignment === assignmentId ? null : assignmentId)
-  }
+    setExpandedAssignment(
+      expandedAssignment === assignmentId ? null : assignmentId
+    );
+  };
 
   const toggleTask = (taskId: string) => {
-    setExpandedTask(expandedTask === taskId ? null : taskId)
-  }
+    setExpandedTask(expandedTask === taskId ? null : taskId);
+  };
 
   const toggleDescription = (id: string) => {
-    setExpandedDescription(expandedDescription === id ? null : id)
-  }
+    setExpandedDescription(expandedDescription === id ? null : id);
+  };
 
   const handleProjectClick = (project: any) => {
-    setEditingItem(project)
-    setEditingType("project")
-    setIsManageModalOpen(true)
-  }
+    setEditingItem(project);
+    setEditingType("project");
+    setIsManageModalOpen(true);
+  };
 
   const handleCourseClick = (course: any) => {
-    setEditingItem(course)
-    setEditingType("course")
-    setIsManageModalOpen(true)
-  }
+    setEditingItem(course);
+    setEditingType("course");
+    setIsManageModalOpen(true);
+  };
 
   const handleCloseModal = () => {
-    setIsManageModalOpen(false)
-    setEditingItem(null)
-    setEditingType(null)
-  }
+    setIsManageModalOpen(false);
+    setEditingItem(null);
+    setEditingType(null);
+  };
 
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-poppins font-bold text-foreground">Projects</h1>
-          <p className="text-muted-foreground">Manage your personal projects and course assignments</p>
+          <h1 className="text-3xl font-poppins font-bold text-foreground">
+            Projects
+          </h1>
+          <p className="text-muted-foreground">
+            Manage your personal projects and course assignments
+          </p>
         </div>
 
         {/* Manage Button */}
@@ -518,7 +556,9 @@ export default function ProjectsPage() {
           <div className="w-10 h-10 bg-noki-primary/10 rounded-xl flex items-center justify-center">
             <FolderKanban className="text-noki-primary" size={20} />
           </div>
-          <h2 className="text-2xl font-poppins font-semibold text-foreground">Personal Projects</h2>
+          <h2 className="text-2xl font-poppins font-semibold text-foreground">
+            Personal Projects
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -526,24 +566,31 @@ export default function ProjectsPage() {
             <div
               key={project.id}
               onClick={() => handleProjectClick(project)}
-              className={`${project.color} text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer relative overflow-hidden group animate-in fade-in slide-in-from-bottom-2`}
+              className={`${project.color} text-white p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer relative overflow-hidden group animate-in fade-in slide-in-from-bottom-2`}
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative z-10 flex flex-col h-full">
-                <h3 className="font-poppins font-bold text-lg mb-3 leading-tight flex-1">{project.name}</h3>
+                <h3 className="font-poppins font-bold text-lg mb-3 leading-tight flex-1 line-clamp-2">
+                  {project.name}
+                </h3>
                 <div className="space-y-2 mt-auto">
                   <div className="flex items-center justify-between text-sm">
                     <span className="opacity-90">Progress</span>
                     <span className="font-semibold">
-                      {project.tasks.filter((t) => t.completed).length}/{project.tasks.length}
+                      {project.tasks.filter((t) => t.completed).length}/
+                      {project.tasks.length}
                     </span>
                   </div>
                   <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
                     <div
                       className="bg-white h-full rounded-full transition-all duration-500"
                       style={{
-                        width: `${(project.tasks.filter((t) => t.completed).length / project.tasks.length) * 100}%`,
+                        width: `${
+                          (project.tasks.filter((t) => t.completed).length /
+                            project.tasks.length) *
+                          100
+                        }%`,
                       }}
                     ></div>
                   </div>
@@ -564,7 +611,9 @@ export default function ProjectsPage() {
           <div className="w-10 h-10 bg-noki-tertiary/10 rounded-xl flex items-center justify-center">
             <BookOpen className="text-noki-tertiary" size={20} />
           </div>
-          <h2 className="text-2xl font-poppins font-semibold text-foreground">Canvas Courses</h2>
+          <h2 className="text-2xl font-poppins font-semibold text-foreground">
+            Canvas Courses
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -572,25 +621,33 @@ export default function ProjectsPage() {
             <div
               key={course.id}
               onClick={() => handleCourseClick(course)}
-              className={`${course.color} text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer relative overflow-hidden group animate-in fade-in slide-in-from-bottom-2`}
+              className={`${course.color} text-white p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer relative overflow-hidden group animate-in fade-in slide-in-from-bottom-2`}
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="absolute top-3 right-3 z-20"></div>
               <div className="relative z-10 flex flex-col h-full">
-                <h3 className="font-poppins font-bold text-base leading-tight pr-16 mb-3 flex-1">{course.name}</h3>
+                <h3 className="font-poppins font-bold text-base leading-tight pr-16 mb-3 flex-1 line-clamp-2">
+                  {course.name}
+                </h3>
                 <div className="space-y-2 mt-auto">
                   <div className="flex items-center justify-between text-sm">
                     <span className="opacity-90">Completed</span>
                     <span className="font-semibold">
-                      {course.assignments.filter((a) => a.completed).length}/{course.assignments.length}
+                      {course.assignments.filter((a) => a.completed).length}/
+                      {course.assignments.length}
                     </span>
                   </div>
                   <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
                     <div
                       className="bg-white h-full rounded-full transition-all duration-500"
                       style={{
-                        width: `${(course.assignments.filter((a) => a.completed).length / course.assignments.length) * 100}%`,
+                        width: `${
+                          (course.assignments.filter((a) => a.completed)
+                            .length /
+                            course.assignments.length) *
+                          100
+                        }%`,
                       }}
                     ></div>
                   </div>
@@ -608,7 +665,9 @@ export default function ProjectsPage() {
         style={{ animationDelay: "200ms" }}
       >
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-2xl font-poppins font-semibold text-foreground">All Work</h2>
+          <h2 className="text-2xl font-poppins font-semibold text-foreground">
+            All Work
+          </h2>
           <div className="flex items-center gap-2 bg-secondary/50 p-1 rounded-lg">
             <button
               onClick={() => setViewMode("grouped")}
@@ -618,7 +677,10 @@ export default function ProjectsPage() {
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
               }`}
             >
-              <LayoutGrid size={16} className="transition-transform duration-300" />
+              <LayoutGrid
+                size={16}
+                className="transition-transform duration-300"
+              />
               <span>Grouped</span>
             </button>
             <button
@@ -639,12 +701,17 @@ export default function ProjectsPage() {
           <div className="animate-in fade-in slide-in-from-left-4 duration-500">
             {/* Assignments Grouped by Course */}
             <div className="space-y-4">
-              <h3 className="text-lg font-poppins font-semibold text-foreground">Assignments by Course</h3>
+              <h3 className="text-lg font-poppins font-semibold text-foreground">
+                Assignments by Course
+              </h3>
               <div className="space-y-3">
                 {canvasCourses.map((course, courseIndex) => (
                   <NokiCard
                     key={course.id}
-                    className={`overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300 border-l-4 ${course.color.replace("bg-", "border-l-")}`}
+                    className={`overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300 border-l-4 ${course.color.replace(
+                      "bg-",
+                      "border-l-"
+                    )}`}
                     style={{ animationDelay: `${courseIndex * 50}ms` }}
                   >
                     <button
@@ -653,85 +720,125 @@ export default function ProjectsPage() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="text-left">
-                          <h3 className="font-poppins font-semibold text-sm text-foreground">{course.name}</h3>
-                          <p className="text-xs text-muted-foreground">{course.code}</p>
+                          <h3 className="font-poppins font-semibold text-sm text-foreground">
+                            {course.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            {course.code}
+                          </p>
                         </div>
                       </div>
                       <ChevronDown
-                        className={`text-muted-foreground transition-all duration-300 ${expandedCourse === course.id ? "rotate-180 text-noki-primary" : ""}`}
+                        className={`text-muted-foreground transition-all duration-300 ${
+                          expandedCourse === course.id
+                            ? "rotate-180 text-noki-primary"
+                            : ""
+                        }`}
                         size={18}
                       />
                     </button>
 
                     {expandedCourse === course.id && (
                       <div className="mt-2 space-y-0 pl-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
-                        {course.assignments.map((assignment, assignmentIndex) => (
-                          <div key={assignment.id}>
-                            {assignmentIndex > 0 && <div className="h-px bg-border/30 my-1.5 mx-2" />}
-                            <div
-                              className="border border-border/50 rounded-lg overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300"
-                              style={{ animationDelay: `${assignmentIndex * 50}ms` }}
-                            >
-                              <div className="flex items-center justify-between p-2 bg-muted/10 transition-colors duration-200 hover:bg-muted/20">
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className="flex-1 min-w-0 space-y-1">
-                                    <TaskItem
-                                      id={assignment.id}
-                                      title={assignment.title}
-                                      completed={assignment.completed}
-                                      onToggle={() => {}}
-                                    />
-                                    <div className="pl-6">
-                                      <p
-                                        className={`text-xs text-muted-foreground transition-all duration-300 ${expandedDescription === assignment.id ? "" : "line-clamp-3"}`}
-                                      >
-                                        {assignment.description}
-                                      </p>
-                                      <button
-                                        onClick={() => toggleDescription(assignment.id)}
-                                        className="text-xs text-noki-primary hover:text-noki-primary/80 font-medium mt-1 transition-all duration-200 hover:translate-x-1"
-                                      >
-                                        {expandedDescription === assignment.id ? "View less" : "View more"}
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                  <span className="text-xs text-muted-foreground">Due: {assignment.dueDate}</span>
-                                  <button
-                                    onClick={() => toggleAssignment(assignment.id)}
-                                    className="p-1 hover:bg-muted/50 rounded transition-all duration-200 hover:scale-110"
-                                  >
-                                    <ChevronRight
-                                      className={`text-muted-foreground transition-all duration-300 ${expandedAssignment === assignment.id ? "rotate-90 text-noki-primary" : ""}`}
-                                      size={16}
-                                    />
-                                  </button>
-                                </div>
-                              </div>
-
-                              {expandedAssignment === assignment.id && assignmentTodos[assignment.id] && (
-                                <div className="bg-muted/5 p-2 space-y-1 pl-2.5 animate-in fade-in slide-in-from-top-2 duration-300 border-t border-border/30">
-                                  <p className="text-xs font-medium text-muted-foreground px-2 mb-1">Todos</p>
-                                  {assignmentTodos[assignment.id].map((todo, todoIndex) => (
-                                    <div
-                                      key={todo.id}
-                                      className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/20 rounded transition-all duration-200 animate-in fade-in slide-in-from-left-1 hover:translate-x-1"
-                                      style={{ animationDelay: `${todoIndex * 30}ms` }}
-                                    >
+                        {course.assignments.map(
+                          (assignment, assignmentIndex) => (
+                            <div key={assignment.id}>
+                              {assignmentIndex > 0 && (
+                                <div className="h-px bg-border/30 my-1.5 mx-2" />
+                              )}
+                              <div
+                                className="border border-border/50 rounded-lg overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300"
+                                style={{
+                                  animationDelay: `${assignmentIndex * 50}ms`,
+                                }}
+                              >
+                                <div className="flex items-center justify-between p-2 bg-muted/10 transition-colors duration-200 hover:bg-muted/20">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0 space-y-1">
                                       <TaskItem
-                                        id={todo.id}
-                                        title={todo.title}
-                                        completed={todo.completed}
+                                        id={assignment.id}
+                                        title={assignment.title}
+                                        completed={assignment.completed}
                                         onToggle={() => {}}
                                       />
+                                      <div className="pl-6">
+                                        <p
+                                          className={`text-xs text-muted-foreground transition-all duration-300 ${
+                                            expandedDescription ===
+                                            assignment.id
+                                              ? ""
+                                              : "line-clamp-3"
+                                          }`}
+                                        >
+                                          {assignment.description}
+                                        </p>
+                                        <button
+                                          onClick={() =>
+                                            toggleDescription(assignment.id)
+                                          }
+                                          className="text-xs text-noki-primary hover:text-noki-primary/80 font-medium mt-1 transition-all duration-200 hover:translate-x-1"
+                                        >
+                                          {expandedDescription === assignment.id
+                                            ? "View less"
+                                            : "View more"}
+                                        </button>
+                                      </div>
                                     </div>
-                                  ))}
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className="text-xs text-muted-foreground">
+                                      Due: {assignment.dueDate}
+                                    </span>
+                                    <button
+                                      onClick={() =>
+                                        toggleAssignment(assignment.id)
+                                      }
+                                      className="p-1 hover:bg-muted/50 rounded transition-all duration-200 hover:scale-110"
+                                    >
+                                      <ChevronRight
+                                        className={`text-muted-foreground transition-all duration-300 ${
+                                          expandedAssignment === assignment.id
+                                            ? "rotate-90 text-noki-primary"
+                                            : ""
+                                        }`}
+                                        size={16}
+                                      />
+                                    </button>
+                                  </div>
                                 </div>
-                              )}
+
+                                {expandedAssignment === assignment.id &&
+                                  assignmentTodos[assignment.id] && (
+                                    <div className="bg-muted/5 p-2 space-y-1 pl-2.5 animate-in fade-in slide-in-from-top-2 duration-300 border-t border-border/30">
+                                      <p className="text-xs font-medium text-muted-foreground px-2 mb-1">
+                                        Todos
+                                      </p>
+                                      {assignmentTodos[assignment.id].map(
+                                        (todo, todoIndex) => (
+                                          <div
+                                            key={todo.id}
+                                            className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/20 rounded transition-all duration-200 animate-in fade-in slide-in-from-left-1 hover:translate-x-1"
+                                            style={{
+                                              animationDelay: `${
+                                                todoIndex * 30
+                                              }ms`,
+                                            }}
+                                          >
+                                            <TaskItem
+                                              id={todo.id}
+                                              title={todo.title}
+                                              completed={todo.completed}
+                                              onToggle={() => {}}
+                                            />
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
+                                  )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        )}
                       </div>
                     )}
                   </NokiCard>
@@ -743,12 +850,17 @@ export default function ProjectsPage() {
 
             {/* Personal Tasks Grouped by Project */}
             <div className="space-y-4">
-              <h3 className="text-lg font-poppins font-semibold text-foreground">Tasks by Personal Project</h3>
+              <h3 className="text-lg font-poppins font-semibold text-foreground">
+                Tasks by Personal Project
+              </h3>
               <div className="space-y-3">
                 {personalProjects.map((project, projectIndex) => (
                   <NokiCard
                     key={project.id}
-                    className={`overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300 border-l-4 ${project.color.replace("bg-", "border-l-")}`}
+                    className={`overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300 border-l-4 ${project.color.replace(
+                      "bg-",
+                      "border-l-"
+                    )}`}
                     style={{ animationDelay: `${projectIndex * 50}ms` }}
                   >
                     <button
@@ -756,10 +868,16 @@ export default function ProjectsPage() {
                       className="w-full flex items-center justify-between p-2 hover:bg-muted/30 rounded-lg transition-all duration-300"
                     >
                       <div className="flex items-center gap-3">
-                        <h3 className="font-poppins font-semibold text-sm text-foreground">{project.name}</h3>
+                        <h3 className="font-poppins font-semibold text-sm text-foreground">
+                          {project.name}
+                        </h3>
                       </div>
                       <ChevronDown
-                        className={`text-muted-foreground transition-all duration-300 ${expandedProject === project.id ? "rotate-180 text-noki-primary" : ""}`}
+                        className={`text-muted-foreground transition-all duration-300 ${
+                          expandedProject === project.id
+                            ? "rotate-180 text-noki-primary"
+                            : ""
+                        }`}
                         size={18}
                       />
                     </button>
@@ -768,7 +886,9 @@ export default function ProjectsPage() {
                       <div className="mt-2 space-y-0 pl-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
                         {project.tasks.map((task, taskIndex) => (
                           <div key={task.id}>
-                            {taskIndex > 0 && <div className="h-px bg-border/30 my-1.5 mx-2" />}
+                            {taskIndex > 0 && (
+                              <div className="h-px bg-border/30 my-1.5 mx-2" />
+                            )}
                             <div
                               className="border border-border/50 rounded-lg overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300"
                               style={{ animationDelay: `${taskIndex * 50}ms` }}
@@ -784,52 +904,75 @@ export default function ProjectsPage() {
                                     />
                                     <div className="pl-6">
                                       <p
-                                        className={`text-xs text-muted-foreground transition-all duration-300 ${expandedDescription === task.id ? "" : "line-clamp-3"}`}
+                                        className={`text-xs text-muted-foreground transition-all duration-300 ${
+                                          expandedDescription === task.id
+                                            ? ""
+                                            : "line-clamp-3"
+                                        }`}
                                       >
                                         {task.description}
                                       </p>
                                       <button
-                                        onClick={() => toggleDescription(task.id)}
+                                        onClick={() =>
+                                          toggleDescription(task.id)
+                                        }
                                         className="text-xs text-noki-primary hover:text-noki-primary/80 font-medium mt-1 transition-all duration-200 hover:translate-x-1"
                                       >
-                                        {expandedDescription === task.id ? "View less" : "View more"}
+                                        {expandedDescription === task.id
+                                          ? "View less"
+                                          : "View more"}
                                       </button>
                                     </div>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                  <span className="text-xs text-muted-foreground">Due: {task.dueDate}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Due: {task.dueDate}
+                                  </span>
                                   <button
                                     onClick={() => toggleTask(task.id)}
                                     className="p-1 hover:bg-muted/50 rounded transition-all duration-200 hover:scale-110"
                                   >
                                     <ChevronRight
-                                      className={`text-muted-foreground transition-all duration-300 ${expandedTask === task.id ? "rotate-90 text-noki-primary" : ""}`}
+                                      className={`text-muted-foreground transition-all duration-300 ${
+                                        expandedTask === task.id
+                                          ? "rotate-90 text-noki-primary"
+                                          : ""
+                                      }`}
                                       size={16}
                                     />
                                   </button>
                                 </div>
                               </div>
 
-                              {expandedTask === task.id && taskTodos[task.id] && (
-                                <div className="bg-muted/5 p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-300 border-t border-border/50">
-                                  <p className="text-xs font-medium text-muted-foreground px-2 mb-1">Todos</p>
-                                  {taskTodos[task.id].map((todo, todoIndex) => (
-                                    <div
-                                      key={todo.id}
-                                      className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/20 rounded transition-all duration-200 animate-in fade-in slide-in-from-left-1 hover:translate-x-1"
-                                      style={{ animationDelay: `${todoIndex * 30}ms` }}
-                                    >
-                                      <TaskItem
-                                        id={todo.id}
-                                        title={todo.title}
-                                        completed={todo.completed}
-                                        onToggle={() => {}}
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                              {expandedTask === task.id &&
+                                taskTodos[task.id] && (
+                                  <div className="bg-muted/5 p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-300 border-t border-border/50">
+                                    <p className="text-xs font-medium text-muted-foreground px-2 mb-1">
+                                      Todos
+                                    </p>
+                                    {taskTodos[task.id].map(
+                                      (todo, todoIndex) => (
+                                        <div
+                                          key={todo.id}
+                                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/20 rounded transition-all duration-200 animate-in fade-in slide-in-from-left-1 hover:translate-x-1"
+                                          style={{
+                                            animationDelay: `${
+                                              todoIndex * 30
+                                            }ms`,
+                                          }}
+                                        >
+                                          <TaskItem
+                                            id={todo.id}
+                                            title={todo.title}
+                                            completed={todo.completed}
+                                            onToggle={() => {}}
+                                          />
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                )}
                             </div>
                           </div>
                         ))}
@@ -845,14 +988,22 @@ export default function ProjectsPage() {
             {allItemsSorted.map((item, itemIndex) => (
               <NokiCard
                 key={item.id}
-                className={`overflow-hidden animate-in fade-in slide-in-from-right-2 duration-300 border-l-4 ${item.parentColor.replace("bg-", "border-l-")}`}
+                className={`overflow-hidden animate-in fade-in slide-in-from-right-2 duration-300 border-l-4 ${item.parentColor.replace(
+                  "bg-",
+                  "border-l-"
+                )}`}
                 style={{ animationDelay: `${itemIndex * 30}ms` }}
               >
                 <div className="flex items-center justify-between p-2 transition-colors duration-200 hover:bg-muted/10 px-0 py-0">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
-                        <TaskItem id={item.id} title={item.title} completed={item.completed} onToggle={() => {}} />
+                        <TaskItem
+                          id={item.id}
+                          title={item.title}
+                          completed={item.completed}
+                          onToggle={() => {}}
+                        />
                       </div>
                       <div className="pl-6 flex items-center gap-2 text-xs text-muted-foreground">
                         <span className="font-medium">{item.parentName}</span>
@@ -867,7 +1018,11 @@ export default function ProjectsPage() {
                       </div>
                       <div className="pl-6">
                         <p
-                          className={`text-xs text-muted-foreground transition-all duration-300 ${expandedDescription === item.id ? "" : "line-clamp-3"}`}
+                          className={`text-xs text-muted-foreground transition-all duration-300 ${
+                            expandedDescription === item.id
+                              ? ""
+                              : "line-clamp-3"
+                          }`}
                         >
                           {item.description}
                         </p>
@@ -875,28 +1030,42 @@ export default function ProjectsPage() {
                           onClick={() => toggleDescription(item.id)}
                           className="text-xs text-noki-primary hover:text-noki-primary/80 font-medium mt-1 transition-all duration-200 hover:translate-x-1"
                         >
-                          {expandedDescription === item.id ? "View less" : "View more"}
+                          {expandedDescription === item.id
+                            ? "View less"
+                            : "View more"}
                         </button>
                       </div>
                     </div>
                   </div>
 
                   {/* Show todos when expanded */}
-                  {((item.type === "assignment" && expandedAssignment === item.id && assignmentTodos[item.id]) ||
-                    (item.type === "task" && expandedTask === item.id && taskTodos[item.id])) && (
+                  {((item.type === "assignment" &&
+                    expandedAssignment === item.id &&
+                    assignmentTodos[item.id]) ||
+                    (item.type === "task" &&
+                      expandedTask === item.id &&
+                      taskTodos[item.id])) && (
                     <div className="bg-muted/5 p-2 space-y-1 border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <p className="text-xs font-medium text-muted-foreground px-2 mb-1">Todos</p>
-                      {(item.type === "assignment" ? assignmentTodos[item.id] : taskTodos[item.id])?.map(
-                        (todo, todoIndex) => (
-                          <div
-                            key={todo.id}
-                            className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/20 rounded transition-all duration-200 animate-in fade-in slide-in-from-left-1 hover:translate-x-1"
-                            style={{ animationDelay: `${todoIndex * 30}ms` }}
-                          >
-                            <TaskItem id={todo.id} title={todo.title} completed={todo.completed} onToggle={() => {}} />
-                          </div>
-                        ),
-                      )}
+                      <p className="text-xs font-medium text-muted-foreground px-2 mb-1">
+                        Todos
+                      </p>
+                      {(item.type === "assignment"
+                        ? assignmentTodos[item.id]
+                        : taskTodos[item.id]
+                      )?.map((todo, todoIndex) => (
+                        <div
+                          key={todo.id}
+                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/20 rounded transition-all duration-200 animate-in fade-in slide-in-from-left-1 hover:translate-x-1"
+                          style={{ animationDelay: `${todoIndex * 30}ms` }}
+                        >
+                          <TaskItem
+                            id={todo.id}
+                            title={todo.title}
+                            completed={todo.completed}
+                            onToggle={() => {}}
+                          />
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -914,5 +1083,5 @@ export default function ProjectsPage() {
         editingType={editingType}
       />
     </div>
-  )
+  );
 }

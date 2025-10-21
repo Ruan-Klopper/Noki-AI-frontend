@@ -370,7 +370,7 @@ export default function TodosSidenav({
         </div>
 
         {/* Scrollable Todos Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-20">
           {!isCollapsed ? (
             <div className="p-3 space-y-5">
               {filteredTodos.map((group, groupIndex) => (
@@ -466,28 +466,6 @@ export default function TodosSidenav({
                   </div>
                 </div>
               ))}
-              <div className="space-y-2">
-                <button
-                  className="group/create w-full h-12 flex items-center justify-center cursor-pointer hover:bg-cyan-500/5 rounded-lg transition-all"
-                  onClick={handleCreateTask}
-                >
-                  <div className="px-4 py-2 rounded-lg border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 group-hover/create:bg-cyan-500/10 group-hover/create:border-cyan-500/50 transition-all duration-200">
-                    <p className="text-xs font-medium text-cyan-600 font-roboto">
-                      + Create Task
-                    </p>
-                  </div>
-                </button>
-                <button
-                  className="group/create w-full h-12 flex items-center justify-center cursor-pointer hover:bg-noki-primary/5 rounded-lg transition-all"
-                  onClick={handleCreateTodo}
-                >
-                  <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200">
-                    <p className="text-xs font-medium text-noki-primary font-roboto">
-                      + Create Todo
-                    </p>
-                  </div>
-                </button>
-              </div>
             </div>
           ) : (
             <div className="p-2 space-y-6 mt-4">
@@ -511,6 +489,33 @@ export default function TodosSidenav({
             </div>
           )}
         </div>
+
+        {!isCollapsed && (
+          <div className="fixed bottom-0 right-0 w-80 bg-card border-t border-border p-3">
+            <div className="flex gap-2">
+              <button
+                className="group/create flex-1 h-12 flex items-center justify-center cursor-pointer hover:bg-cyan-500/5 rounded-lg transition-all"
+                onClick={handleCreateTask}
+              >
+                <div className="px-4 py-2 rounded-lg border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 group-hover/create:bg-cyan-500/10 group-hover/create:border-cyan-500/50 transition-all duration-200">
+                  <p className="text-xs font-medium text-cyan-600 font-roboto">
+                    + Create Task
+                  </p>
+                </div>
+              </button>
+              <button
+                className="group/create flex-1 h-12 flex items-center justify-center cursor-pointer hover:bg-noki-primary/5 rounded-lg transition-all"
+                onClick={handleCreateTodo}
+              >
+                <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200">
+                  <p className="text-xs font-medium text-noki-primary font-roboto">
+                    + Create Todo
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Mobile Overlay */}
@@ -618,7 +623,7 @@ export default function TodosSidenav({
         </div>
 
         {/* Scrollable Todos Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-20">
           <div className="p-3 space-y-5">
             {filteredTodos.map((group, groupIndex) => (
               <div key={group.day} className="space-y-2">
@@ -715,28 +720,31 @@ export default function TodosSidenav({
                 </div>
               </div>
             ))}
-            <div className="space-y-2">
-              <button
-                className="group/create w-full h-12 flex items-center justify-center cursor-pointer hover:bg-cyan-500/5 rounded-lg transition-all"
-                onClick={handleCreateTask}
-              >
-                <div className="px-4 py-2 rounded-lg border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 group-hover/create:bg-cyan-500/10 group-hover/create:border-cyan-500/50 transition-all duration-200">
-                  <p className="text-xs font-medium text-cyan-600 font-roboto">
-                    + Create Task
-                  </p>
-                </div>
-              </button>
-              <button
-                className="group/create w-full h-12 flex items-center justify-center cursor-pointer hover:bg-noki-primary/5 rounded-lg transition-all"
-                onClick={handleCreateTodo}
-              >
-                <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200">
-                  <p className="text-xs font-medium text-noki-primary font-roboto">
-                    + Create Todo
-                  </p>
-                </div>
-              </button>
-            </div>
+          </div>
+        </div>
+
+        <div className="fixed bottom-0 right-0 w-80 bg-card border-t border-border p-3">
+          <div className="flex gap-2">
+            <button
+              className="group/create flex-1 h-12 flex items-center justify-center cursor-pointer hover:bg-cyan-500/5 rounded-lg transition-all"
+              onClick={handleCreateTask}
+            >
+              <div className="px-4 py-2 rounded-lg border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 group-hover/create:bg-cyan-500/10 group-hover/create:border-cyan-500/50 transition-all duration-200">
+                <p className="text-xs font-medium text-cyan-600 font-roboto">
+                  + Create Task
+                </p>
+              </div>
+            </button>
+            <button
+              className="group/create flex-1 h-12 flex items-center justify-center cursor-pointer hover:bg-noki-primary/5 rounded-lg transition-all"
+              onClick={handleCreateTodo}
+            >
+              <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200">
+                <p className="text-xs font-medium text-noki-primary font-roboto">
+                  + Create Todo
+                </p>
+              </div>
+            </button>
           </div>
         </div>
       </aside>
