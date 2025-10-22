@@ -11,6 +11,7 @@ import {
 } from "../types";
 import { useAuth } from "../hooks/useAuth";
 import { GoogleAuth } from "./google-auth";
+import { notificationService } from "../notification/notification.service";
 
 // Auth Context Type
 interface AuthContextType {
@@ -32,6 +33,13 @@ interface AuthContextType {
   initializeGoogleAuth: () => Promise<void>;
   renderGoogleButton: (elementId: string, options?: any) => void;
   stopGoogleLoading: () => void;
+
+  // Notifications
+  showNotification: (
+    type: "success" | "error" | "info" | "warning",
+    title: string,
+    description?: string
+  ) => void;
 }
 
 // Create Auth Context
@@ -69,6 +77,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       GoogleAuth.setCallback(async (credential: string) => {
         try {
+          // Show loading notification for Google auth
+          showNotification(
+            "info",
+            "Signing in with Google...",
+            "Please wait while we authenticate your account"
+          );
+
           // Verify the token with our server
           const response = await fetch("/api/auth/google/token", {
             method: "POST",
@@ -90,24 +105,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 "Google authentication completed, determining redirect..."
               );
 
-              // Check if we're on signup page and redirect to step 3 (LMS Selection)
+              // Show success notification
               if (window.location.pathname === "/signup") {
+                showNotification(
+                  "success",
+                  "Google sign up successful!",
+                  "Redirecting to LMS setup..."
+                );
                 console.log("Redirecting to signup step 3 (LMS Selection)...");
                 // For signup, we need to stay on the same page but go to step 3
                 // This will be handled by the signup page component
                 window.location.href = "/signup?step=3";
               } else {
+                showNotification(
+                  "success",
+                  "Welcome back!",
+                  "You have been successfully signed in"
+                );
                 console.log("Redirecting to dashboard...");
                 // For signin, redirect to dashboard
                 window.location.href = "/dashboard";
               }
+            } else {
+              showNotification(
+                "error",
+                "Google authentication failed",
+                authResponse.message || "Authentication failed"
+              );
             }
           } else {
             console.error("Token verification failed");
+            showNotification(
+              "error",
+              "Google authentication failed",
+              "Token verification failed"
+            );
             throw new Error("Token verification failed");
           }
         } catch (error) {
           console.error("Error in Google auth callback:", error);
+          showNotification(
+            "error",
+            "Google authentication failed",
+            error instanceof Error ? error.message : "Authentication failed"
+          );
           // Still call the auth hook to handle the error
           await authHook.googleAuth(credential);
         }
@@ -138,6 +179,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Stop Google loading state
   const stopGoogleLoading = (): void => {
     setGoogleLoading(false);
+  };
+
+  // Show notification
+  const showNotification = (
+    type: "success" | "error" | "info" | "warning",
+    title: string,
+    description?: string
+  ): void => {
+    notificationService.show({ type, title, description });
   };
 
   // Initialize Google OAuth on mount
@@ -171,6 +221,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeGoogleAuth,
     renderGoogleButton,
     stopGoogleLoading,
+
+    // Notifications
+    showNotification,
   };
 
   return (

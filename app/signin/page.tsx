@@ -5,6 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { useAuthContext } from "@/services/auth/auth-context";
+import { Button, Input, Checkbox, Spin, Alert } from "antd";
+import {
+  UserOutlined,
+  LockOutlined,
+  LoadingOutlined,
+  ExclamationCircleOutlined,
+} from "@ant-design/icons";
 import "@/styles/google-signin.css";
 
 export default function SignInPage() {
@@ -16,6 +23,7 @@ export default function SignInPage() {
     initializeGoogleAuth,
     googleLoading,
     renderGoogleButton,
+    showNotification,
   } = useAuthContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,15 +71,31 @@ export default function SignInPage() {
     setError("");
     setIsSubmitting(true);
 
+    // Show loading notification
+    showNotification(
+      "info",
+      "Signing in...",
+      "Please wait while we authenticate your account"
+    );
+
     try {
       const response = await login({ email, password });
       if (response.success) {
+        showNotification(
+          "success",
+          "Welcome back!",
+          "You have been successfully signed in"
+        );
         router.push("/dashboard");
       } else {
-        setError(response.message || "Sign in failed");
+        const errorMessage = response.message || "Sign in failed";
+        setError(errorMessage);
+        showNotification("error", "Sign in failed", errorMessage);
       }
     } catch (error: any) {
-      setError(error.message || "An error occurred during sign in");
+      const errorMessage = error.message || "An error occurred during sign in";
+      setError(errorMessage);
+      showNotification("error", "Sign in failed", errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -98,9 +122,19 @@ export default function SignInPage() {
           </p>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-600 text-sm font-roboto">{error}</p>
-            </div>
+            <Alert
+              message="Sign in failed"
+              description={error}
+              type="error"
+              icon={<ExclamationCircleOutlined />}
+              showIcon
+              className="mb-6"
+              style={{
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                borderColor: "rgba(239, 68, 68, 0.3)",
+                color: "#f8fafc",
+              }}
+            />
           )}
 
           <form onSubmit={handleSignIn} className="space-y-4">
@@ -111,13 +145,15 @@ export default function SignInPage() {
               >
                 Email
               </label>
-              <input
+              <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-border bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-noki-primary font-roboto"
                 placeholder="student@example.com"
+                prefix={<UserOutlined />}
+                size="large"
+                required
               />
             </div>
 
@@ -128,21 +164,21 @@ export default function SignInPage() {
               >
                 Password
               </label>
-              <input
+              <Input.Password
                 id="password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-border bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-noki-primary font-roboto"
                 placeholder="••••••••"
+                prefix={<LockOutlined />}
+                size="large"
+                required
               />
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 font-roboto text-foreground">
-                <input type="checkbox" className="rounded" />
+              <Checkbox className="font-roboto text-foreground">
                 Remember me
-              </label>
+              </Checkbox>
               <Link
                 href="/forgot-password"
                 className="text-noki-primary hover:underline font-roboto"
@@ -151,20 +187,16 @@ export default function SignInPage() {
               </Link>
             </div>
 
-            <button
-              type="submit"
+            <Button
+              type="primary"
+              htmlType="submit"
               disabled={isSubmitting || isLoading}
-              className="w-full px-4 py-3 rounded-lg bg-noki-primary text-white font-roboto font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              size="large"
+              className="w-full"
+              icon={isSubmitting || isLoading ? <LoadingOutlined /> : undefined}
             >
-              {isSubmitting || isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </button>
+              {isSubmitting || isLoading ? "Signing in..." : "Sign In"}
+            </Button>
           </form>
 
           <div className="relative">
@@ -182,7 +214,14 @@ export default function SignInPage() {
           <div className="w-full">
             {googleLoading ? (
               <div className="w-full px-4 py-3 rounded-lg border border-border bg-secondary text-foreground font-roboto font-medium flex items-center justify-center gap-3 opacity-50">
-                <div className="w-5 h-5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+                <Spin
+                  indicator={
+                    <LoadingOutlined
+                      style={{ fontSize: 20, color: "#1d72a6" }}
+                      spin
+                    />
+                  }
+                />
                 Signing in with Google...
               </div>
             ) : (

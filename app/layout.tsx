@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import "./globals.css";
 import LayoutWrapper from "@/components/global/layout-wrapper";
+import AntdProvider from "@/components/antd-provider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -70,10 +71,12 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans ${poppins.variable} ${roboto.variable}`}>
-        <Suspense fallback={null}>
-          <LayoutWrapper>{children}</LayoutWrapper>
-          <Analytics />
-        </Suspense>
+        <AntdProvider>
+          <Suspense fallback={null}>
+            <LayoutWrapper>{children}</LayoutWrapper>
+            <Analytics />
+          </Suspense>
+        </AntdProvider>
       </body>
     </html>
   );

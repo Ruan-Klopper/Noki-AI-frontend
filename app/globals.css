@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "antd/dist/reset.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -49,7 +50,8 @@
   /* Updated font variables for Noki brand fonts */
   --font-sans: var(--font-roboto);
   --font-heading: var(--font-poppins);
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas,
+    "Liberation Mono", Menlo, monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -136,7 +138,8 @@
   background-color: var(--card);
   color: var(--card-foreground);
   border-radius: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   padding: 16px;
 }
 
@@ -144,7 +147,8 @@
   background-color: var(--card);
   color: var(--card-foreground);
   border-radius: 20px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   padding: 16px;
 }
 
@@ -156,13 +160,19 @@
     @apply bg-background text-foreground;
   }
 
-  /* Set default heading font to Poppins */
-  h1,
+  /* Set default heading font to Poppins with minimal line-height */
+  /* h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    @apply font-heading font-bold;
+    @apply font-heading font-bold leading-none;
+  } */
+
+  /* Set paragraphs to have minimal line-height and no margins/padding */
+  p {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
   }
 }

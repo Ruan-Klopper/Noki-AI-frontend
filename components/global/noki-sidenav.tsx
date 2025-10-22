@@ -18,6 +18,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { useAuthContext } from "../../services/auth/auth-context";
 
 interface SidenavProps {
   className?: string;
@@ -45,6 +46,7 @@ export default function NokiSidenav({
   >("1");
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout, isAuthenticated } = useAuthContext();
 
   const navLinks = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -59,9 +61,15 @@ export default function NokiSidenav({
     setIsMobileMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    // Simulate logout
-    router.push("/signin");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push("/signin");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Still redirect to signin even if logout fails
+      router.push("/signin");
+    }
   };
 
   const isChatActive = pathname === "/chat";
@@ -269,17 +277,17 @@ export default function NokiSidenav({
             >
               <div className="w-8 h-8 bg-noki-tertiary rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-poppins font-bold text-sm">
-                  U
+                  {user ? user.firstname.charAt(0).toUpperCase() : "U"}
                 </span>
               </div>
               {!isCollapsed && (
-                <div className="flex-1 min-w-0">
-                  <p className="font-roboto text-sm font-medium text-foreground truncate">
-                    Student User
-                  </p>
-                  <p className="font-roboto text-xs text-muted-foreground truncate">
-                    student@example.com
-                  </p>
+                <div className="flex-1 min-w-0 flex flex-col">
+                  <div className="font-roboto text-lg font-semibold text-foreground truncate">
+                    {user ? `${user.firstname} ${user.lastname}` : "Loading..."}
+                  </div>
+                  <div className="font-roboto text-xs text-muted-foreground truncate">
+                    {user ? user.email : "..."}
+                  </div>
                 </div>
               )}
             </div>
@@ -508,7 +516,7 @@ export default function NokiSidenav({
               {/* Footer */}
               <div className="border-t border-border p-3 space-y-3">
                 <p className="px-3 text-xs font-roboto font-semibold text-muted-foreground uppercase tracking-wider">
-                  Integrations
+                  Integ
                 </p>
 
                 <Link
@@ -517,7 +525,7 @@ export default function NokiSidenav({
                   className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors font-roboto bg-red-500 text-white hover:bg-red-600"
                 >
                   <GraduationCap className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-medium">Canvas LMS</span>
+                  <span className="font-medium">Canvas LMS test</span>
                 </Link>
 
                 <div className="border-t border-border" />
@@ -526,16 +534,18 @@ export default function NokiSidenav({
                   <div className="flex items-center gap-3 px-2 py-2">
                     <div className="w-8 h-8 bg-noki-tertiary rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-poppins font-bold text-sm">
-                        U
+                        {user ? user.firstname.charAt(0).toUpperCase() : "U"}
                       </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-roboto text-sm font-medium text-foreground truncate">
-                        Student User
-                      </p>
-                      <p className="font-roboto text-xs text-muted-foreground truncate">
-                        student@example.com
-                      </p>
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      <div className="font-roboto text-lg font-semibold text-foreground truncate">
+                        {user
+                          ? `${user.firstname} ${user.lastname}`
+                          : "Loading..."}
+                      </div>
+                      <div className="font-roboto text-xs text-muted-foreground truncate">
+                        {user ? user.email : "..."}
+                      </div>
                     </div>
                   </div>
 

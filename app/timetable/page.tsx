@@ -12,6 +12,8 @@ import {
   ClipboardList,
   CalendarDays,
 } from "lucide-react";
+import { Select, TimePicker } from "antd";
+import dayjs from "dayjs";
 import { ManageProjectsModal } from "@/components/global/manage-projects-modal";
 
 export default function TimetablePage() {
@@ -1526,7 +1528,7 @@ export default function TimetablePage() {
             <h3 className="font-poppins font-semibold text-lg text-foreground">
               Today's Schedule
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-3 sticky top-22">
               {allDayItems.map((item) => (
                 <div
                   key={item.id}
@@ -1623,85 +1625,6 @@ export default function TimetablePage() {
           </div>
         </div>
 
-        {(currentView === "week" || currentView === "day") && (
-          <div className="bg-card rounded-xl border border-border p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Clock size={16} className="text-noki-primary" />
-                <span className="text-sm font-medium text-foreground">
-                  Time Range:
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => handlePresetChange("work")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    timeRangePreset === "work"
-                      ? "bg-noki-primary text-white shadow-md"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                  }`}
-                >
-                  Work Hours (6AM - 6PM)
-                </button>
-                <button
-                  onClick={() => handlePresetChange("extended")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    timeRangePreset === "extended"
-                      ? "bg-noki-primary text-white shadow-md"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                  }`}
-                >
-                  Extended (6AM - 2AM)
-                </button>
-                <button
-                  onClick={() => handlePresetChange("full")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    timeRangePreset === "full"
-                      ? "bg-noki-primary text-white shadow-md"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                  }`}
-                >
-                  Full Day (12AM - 11PM)
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 ml-auto">
-                <label className="text-xs text-muted-foreground">Custom:</label>
-                <select
-                  value={startHour}
-                  onChange={(e) => {
-                    setStartHour(Number(e.target.value));
-                    setTimeRangePreset("custom");
-                  }}
-                  className="px-2 py-1 text-xs rounded-lg border border-border bg-background text-foreground"
-                >
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {i.toString().padStart(2, "0")}:00
-                    </option>
-                  ))}
-                </select>
-                <span className="text-xs text-muted-foreground">to</span>
-                <select
-                  value={endHour}
-                  onChange={(e) => {
-                    setEndHour(Number(e.target.value));
-                    setTimeRangePreset("custom");
-                  }}
-                  className="px-2 py-1 text-xs rounded-lg border border-border bg-background text-foreground"
-                >
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {i.toString().padStart(2, "0")}:00
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigateDate("prev")}
@@ -1737,6 +1660,63 @@ export default function TimetablePage() {
             />
           </button>
         </div>
+
+        {(currentView === "week" || currentView === "day") && (
+          <div className="sticky top-4 bg-card rounded-xl border border-border p-3 z-50">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-noki-primary" />
+                <div className="text-sm font-medium text-foreground">
+                  Time Range:
+                </div>
+              </div>
+
+              <Select
+                value={timeRangePreset}
+                onChange={(value) => handlePresetChange(value)}
+                size="small"
+                style={{ width: 180 }}
+                options={[
+                  { value: "work", label: "Work Hours (6AM - 6PM)" },
+                  { value: "extended", label: "Extended (6AM - 2AM)" },
+                  { value: "full", label: "Full Day (12AM - 11PM)" },
+                  { value: "custom", label: "Custom" },
+                ]}
+              />
+
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-muted-foreground">From:</div>
+                <TimePicker
+                  value={dayjs().hour(startHour).minute(0)}
+                  onChange={(time) => {
+                    if (time) {
+                      setStartHour(time.hour());
+                      setTimeRangePreset("custom");
+                    }
+                  }}
+                  format="HH:00"
+                  size="small"
+                  showNow={false}
+                  style={{ width: 80 }}
+                />
+                <div className="text-xs text-muted-foreground">To:</div>
+                <TimePicker
+                  value={dayjs().hour(endHour).minute(0)}
+                  onChange={(time) => {
+                    if (time) {
+                      setEndHour(time.hour());
+                      setTimeRangePreset("custom");
+                    }
+                  }}
+                  format="HH:00"
+                  size="small"
+                  showNow={false}
+                  style={{ width: 80 }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-card rounded-2xl shadow-sm border border-border p-3 sm:p-6">
           {currentView === "month" && renderMonthView()}

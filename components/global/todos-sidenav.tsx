@@ -268,7 +268,7 @@ export default function TodosSidenav({
       <aside
         className={cn(
           "hidden md:flex flex-col bg-card border-l border-border transition-all duration-300 ease-in-out h-screen fixed right-0 top-0 z-30",
-          isCollapsed ? "w-16" : "w-80"
+          isCollapsed ? "w-16" : "w-64"
         )}
       >
         {/* Sticky Header */}
@@ -276,15 +276,15 @@ export default function TodosSidenav({
           <div
             className={cn(
               "relative overflow-hidden",
-              isCollapsed ? "h-16" : "h-24"
+              isCollapsed ? "h-12" : "h-32"
             )}
           >
             <Image
               src="/placeholder.svg?height=96&width=320"
               alt="Noki Character"
               width={320}
-              height={96}
-              className="w-full h-full object-cover"
+              height={120}
+              className="w-full h-full object-cover bg-noki-primary"
             />
           </div>
 
@@ -338,7 +338,7 @@ export default function TodosSidenav({
                       : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                   )}
                 >
-                  This Week
+                  Week
                 </button>
                 <button
                   onClick={() => setActiveFilter("month")}
@@ -349,7 +349,7 @@ export default function TodosSidenav({
                       : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                   )}
                 >
-                  This Month
+                  Month
                 </button>
               </div>
             </div>
@@ -375,13 +375,13 @@ export default function TodosSidenav({
             <div className="p-3 space-y-5">
               {filteredTodos.map((group, groupIndex) => (
                 <div key={group.day} className="space-y-2">
-                  <div className="sticky top-0 bg-card px-2 py-1.5 z-10 border-b border-border/50">
-                    <h3 className="font-poppins font-semibold text-sm text-foreground">
+                  <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-border/50">
+                    <div className="font-poppins font-semibold text-sm text-foreground">
                       {group.day}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
                       {group.date}
-                    </p>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">
@@ -491,16 +491,16 @@ export default function TodosSidenav({
         </div>
 
         {!isCollapsed && (
-          <div className="fixed bottom-0 right-0 w-80 bg-card border-t border-border p-3">
+          <div className="fixed bottom-0 right-0 w-64 bg-card border-t border-border p-3 z-50">
             <div className="flex gap-2">
               <button
                 className="group/create flex-1 h-12 flex items-center justify-center cursor-pointer hover:bg-cyan-500/5 rounded-lg transition-all"
                 onClick={handleCreateTask}
               >
                 <div className="px-4 py-2 rounded-lg border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 group-hover/create:bg-cyan-500/10 group-hover/create:border-cyan-500/50 transition-all duration-200">
-                  <p className="text-xs font-medium text-cyan-600 font-roboto">
+                  <div className="text-xs font-medium text-cyan-600 font-roboto">
                     + Create Task
-                  </p>
+                  </div>
                 </div>
               </button>
               <button
@@ -508,9 +508,9 @@ export default function TodosSidenav({
                 onClick={handleCreateTodo}
               >
                 <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200">
-                  <p className="text-xs font-medium text-noki-primary font-roboto">
+                  <div className="text-xs font-medium text-noki-primary font-roboto">
                     + Create Todo
-                  </p>
+                  </div>
                 </div>
               </button>
             </div>
@@ -596,7 +596,7 @@ export default function TodosSidenav({
                     : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                 )}
               >
-                This Week
+                Week
               </button>
               <button
                 onClick={() => setActiveFilter("month")}
@@ -607,7 +607,7 @@ export default function TodosSidenav({
                     : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                 )}
               >
-                This Month
+                Month
               </button>
             </div>
           </div>
@@ -628,13 +628,13 @@ export default function TodosSidenav({
             {filteredTodos.map((group, groupIndex) => (
               <div key={group.day} className="space-y-2">
                 {/* Day Header */}
-                <div className="sticky top-0 bg-card px-2 py-1.5 z-10 border-b border-border/50">
-                  <h3 className="font-poppins font-semibold text-sm text-foreground">
+                <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-border/50">
+                  <div className="font-poppins font-semibold text-sm text-foreground">
                     {group.day}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
                     {group.date}
-                  </p>
+                  </div>
                 </div>
 
                 {/* Todos */}
@@ -723,26 +723,26 @@ export default function TodosSidenav({
           </div>
         </div>
 
-        <div className="fixed bottom-0 right-0 w-80 bg-card border-t border-border p-3">
+        <div className="sticky bottom-0 right-0 w-80 bg-card border-t border-border p-3 z-[1000]">
           <div className="flex gap-2">
             <button
               className="group/create flex-1 h-12 flex items-center justify-center cursor-pointer hover:bg-cyan-500/5 rounded-lg transition-all"
               onClick={handleCreateTask}
             >
               <div className="px-4 py-2 rounded-lg border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 group-hover/create:bg-cyan-500/10 group-hover/create:border-cyan-500/50 transition-all duration-200">
-                <p className="text-xs font-medium text-cyan-600 font-roboto">
+                <div className="text-xs font-medium text-cyan-600 font-roboto">
                   + Create Task
-                </p>
+                </div>
               </div>
             </button>
             <button
               className="group/create flex-1 h-12 flex items-center justify-center cursor-pointer hover:bg-noki-primary/5 rounded-lg transition-all"
               onClick={handleCreateTodo}
             >
-              <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200">
-                <p className="text-xs font-medium text-noki-primary font-roboto">
+              <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200 ">
+                <div className="text-xs font-medium text-noki-primary font-roboto">
                   + Create Todo
-                </p>
+                </div>
               </div>
             </button>
           </div>

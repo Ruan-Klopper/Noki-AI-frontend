@@ -14,9 +14,42 @@ import {
   ChevronRight,
   Check,
   ChevronDown,
+  Settings,
+  MoreVertical,
 } from "lucide-react";
 import { NokiButton } from "./noki-button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import {
+  Input,
+  Select,
+  Form,
+  Space,
+  Row,
+  Col,
+  Card,
+  Tabs,
+  Button,
+  Badge,
+  Dropdown,
+  Menu,
+  Tag,
+  Avatar,
+  Tooltip,
+  Divider,
+  Empty,
+  Statistic,
+} from "antd";
+import {
+  FolderOutlined,
+  BookOutlined,
+  CheckSquareOutlined,
+  CalendarOutlined,
+  ClockCircleOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  MoreOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 
 interface ManageProjectsModalProps {
   isOpen: boolean;
@@ -289,356 +322,514 @@ export function ManageProjectsModal({
 
   if (!isOpen) return null;
 
+  // Calculate statistics
+  const totalProjects = allProjects.length;
+  const totalTasks = tasks.length;
+  const totalTodos = todos.length;
+  const completedTodos = todos.filter((todo) => todo.completed).length;
+
+  const tabItems = [
+    {
+      key: "projects",
+      label: (
+        <span className="flex items-center gap-2">
+          <FolderOutlined />
+          Projects
+          <Badge count={totalProjects} size="small" />
+        </span>
+      ),
+    },
+    {
+      key: "tasks",
+      label: (
+        <span className="flex items-center gap-2">
+          <ListTodo size={16} />
+          Tasks
+          <Badge count={totalTasks} size="small" />
+        </span>
+      ),
+    },
+    {
+      key: "todos",
+      label: (
+        <span className="flex items-center gap-2">
+          <CheckSquareOutlined />
+          Todos
+          <Badge count={totalTodos} size="small" />
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-3xl shadow-2xl w-full max-w-4xl border border-border max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border flex-shrink-0">
-          <div>
-            <h3 className="font-poppins font-bold text-xl text-foreground">
-              Project Management
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Create and manage your projects, tasks, and todos
-            </p>
+      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-4xl border border-border max-h-[95vh] flex flex-col">
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-r from-noki-primary/10 to-noki-tertiary/10 p-4 border-b border-border flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-noki-primary to-noki-tertiary rounded-lg flex items-center justify-center">
+                <Settings className="text-white" size={20} />
+              </div>
+              <div>
+                <h3 className="font-poppins font-bold text-xl text-foreground">
+                  Project Management
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Organize your work with projects, tasks, and todos
+                </p>
+              </div>
+            </div>
+
+            {/* Statistics in Header */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-noki-primary">
+                    {totalProjects}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Projects</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-noki-tertiary">
+                    {totalTasks}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Tasks</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-orange-500">
+                    {totalTodos}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Todos</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-green-500">
+                    {completedTodos}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Done</div>
+                </div>
+              </div>
+              <Button
+                type="text"
+                icon={<X size={18} />}
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              />
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-muted rounded-lg"
-          >
-            <X size={20} />
-          </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 px-6 pt-4 border-b border-border flex-shrink-0">
-          <button
-            onClick={() => {
-              setActiveTab("projects");
+        {/* Enhanced Tabs */}
+        <div className="px-4 pt-3 flex-shrink-0">
+          <Tabs
+            activeKey={activeTab}
+            onChange={(key) => {
+              setActiveTab(key as TabMode);
               setShowAddForm(false);
               setEditingId("");
             }}
-            className={`px-4 py-2 rounded-t-lg font-medium text-sm transition-colors ${
-              activeTab === "projects"
-                ? "bg-noki-primary text-white"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <FolderKanban className="inline mr-2" size={16} />
-            Projects
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("tasks");
-              setShowAddForm(false);
-              setEditingId("");
-            }}
-            className={`px-4 py-2 rounded-t-lg font-medium text-sm transition-colors ${
-              activeTab === "tasks"
-                ? "bg-noki-primary text-white"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <ListTodo className="inline mr-2" size={16} />
-            Tasks
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("todos");
-              setShowAddForm(false);
-              setEditingId("");
-            }}
-            className={`px-4 py-2 rounded-t-lg font-medium text-sm transition-colors ${
-              activeTab === "todos"
-                ? "bg-noki-primary text-white"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <Check className="inline mr-2" size={16} />
-            Todos
-          </button>
+            items={tabItems}
+            className="project-management-tabs"
+            size="middle"
+          />
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-4 overflow-y-auto flex-1">
           {/* Projects Tab */}
           {activeTab === "projects" && (
-            <div className="space-y-3">
+            <div className="space-y-4 gap-4 flex flex-col gap-4">
               {/* Add Project Button */}
               {!showAddForm && !editingId && (
-                <button
+                <Card
+                  hoverable
                   onClick={() => setShowAddForm(true)}
-                  className="w-full p-4 border-2 border-dashed border-noki-primary/30 rounded-xl hover:border-noki-primary/50 hover:bg-noki-primary/5 transition-all group"
+                  className="border-2 border-dashed border-noki-primary/30 hover:border-noki-primary/50 transition-all cursor-pointer mb-4"
                 >
-                  <div className="flex items-center justify-center gap-2 text-noki-primary">
-                    <Plus size={20} />
-                    <span className="font-medium">Add New Project</span>
+                  <div className="text-center py-6">
+                    <div className="w-12 h-12 bg-noki-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <PlusOutlined className="text-noki-primary text-xl" />
+                    </div>
+                    <h4 className="text-base font-semibold text-foreground mb-1">
+                      Create New Project
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Start organizing your work with a new project
+                    </p>
                   </div>
-                </button>
+                </Card>
               )}
 
               {/* Add/Edit Project Form */}
               {(showAddForm || editingId) && activeTab === "projects" && (
-                <div className="border-2 border-noki-primary/30 rounded-xl p-4 bg-noki-primary/5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-foreground">
-                      {editingId ? "Edit Project" : "New Project"}
-                    </h4>
-                    <button
+                <Card
+                  title={editingId ? "Edit Project" : "New Project"}
+                  extra={
+                    <Button
+                      type="text"
+                      icon={<X size={16} />}
                       onClick={() => {
                         setShowAddForm(false);
                         setEditingId("");
                         resetForm();
                       }}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setProjectType("personal")}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                        projectType === "personal"
-                          ? "bg-noki-primary text-white"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      <FolderKanban className="inline mr-1" size={14} />
-                      Personal
-                    </button>
-                    <button
-                      onClick={() => setProjectType("canvas")}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                        projectType === "canvas"
-                          ? "bg-noki-primary text-white"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      <BookOpen className="inline mr-1" size={14} />
-                      Canvas
-                    </button>
-                  </div>
-
-                  <input
-                    type="text"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    placeholder="Project name..."
-                    className="w-full p-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-noki-primary text-sm"
-                    autoFocus
-                  />
-
-                  {projectType === "personal" && (
-                    <textarea
-                      value={projectDescription}
-                      onChange={(e) => setProjectDescription(e.target.value)}
-                      placeholder="Description (optional)..."
-                      className="w-full p-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-noki-primary resize-none text-sm"
-                      rows={2}
                     />
-                  )}
-
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                      Color
-                    </label>
-                    <div className="grid grid-cols-8 gap-2">
-                      {colorOptions.map((color) => (
+                  }
+                  className="border-noki-primary/30"
+                >
+                  <Form layout="vertical" className="space-y-4">
+                    {/* Project Type Selection */}
+                    <Form.Item label="Project Type" required>
+                      <div className="flex gap-3">
                         <button
-                          key={color}
-                          onClick={() => setProjectColor(color)}
-                          className={`h-8 rounded-lg ${color} transition-all ${
-                            projectColor === color
-                              ? "ring-2 ring-foreground/30 scale-110"
-                              : "hover:scale-105"
+                          onClick={() => setProjectType("personal")}
+                          className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                            projectType === "personal"
+                              ? "bg-noki-primary text-white shadow-md"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                           }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                        >
+                          <FolderKanban size={16} />
+                          Personal Project
+                        </button>
+                        <button
+                          onClick={() => setProjectType("canvas")}
+                          className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                            projectType === "canvas"
+                              ? "bg-noki-primary text-white shadow-md"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                          }`}
+                        >
+                          <BookOpen size={16} />
+                          Canvas Course
+                        </button>
+                      </div>
+                    </Form.Item>
 
-                  <div className="flex gap-2">
-                    <NokiButton
-                      onClick={handleSaveProject}
-                      variant="positive"
-                      size="sm"
-                      disabled={!projectName.trim()}
-                    >
-                      {editingId ? "Save Changes" : "Create Project"}
-                    </NokiButton>
-                    <NokiButton
-                      onClick={() => {
-                        setShowAddForm(false);
-                        setEditingId("");
-                        resetForm();
-                      }}
-                      variant="neutral"
-                      size="sm"
-                    >
-                      Cancel
-                    </NokiButton>
-                  </div>
-                </div>
+                    {/* Project Name */}
+                    <Form.Item label="Project Name" required>
+                      <Input
+                        value={projectName}
+                        onChange={(e) => setProjectName(e.target.value)}
+                        placeholder="Enter project name..."
+                        size="large"
+                        className="w-full"
+                        autoFocus
+                      />
+                    </Form.Item>
+
+                    {/* Description (only for personal projects) */}
+                    {projectType === "personal" && (
+                      <Form.Item label="Description">
+                        <Input.TextArea
+                          value={projectDescription}
+                          onChange={(e) =>
+                            setProjectDescription(e.target.value)
+                          }
+                          placeholder="Enter project description (optional)..."
+                          rows={3}
+                          className="w-full"
+                        />
+                      </Form.Item>
+                    )}
+
+                    {/* Color Selection */}
+                    <Form.Item label="Project Color">
+                      <div className="grid grid-cols-6 gap-3">
+                        {colorOptions.map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => setProjectColor(color)}
+                            className={`h-12 rounded-lg ${color} transition-all ${
+                              projectColor === color
+                                ? "ring-2 ring-foreground/50 scale-105 shadow-lg"
+                                : "hover:scale-105 hover:shadow-md"
+                            }`}
+                            title={color.replace("bg-", "").replace("-", " ")}
+                          />
+                        ))}
+                      </div>
+                    </Form.Item>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-4">
+                      <NokiButton
+                        onClick={handleSaveProject}
+                        variant="positive"
+                        size="sm"
+                        disabled={!projectName.trim()}
+                        className="flex-1"
+                      >
+                        {editingId ? "Save Changes" : "Create Project"}
+                      </NokiButton>
+                      <NokiButton
+                        onClick={() => {
+                          setShowAddForm(false);
+                          setEditingId("");
+                          resetForm();
+                        }}
+                        variant="negative"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        Cancel
+                      </NokiButton>
+                    </div>
+                  </Form>
+                </Card>
               )}
 
-              {/* Projects List */}
-              <div className="space-y-2">
+              {/* Projects Grid */}
+              <Row gutter={[12, 12]}>
                 {allProjects.map((project) => {
                   const projectTasks = tasks.filter(
                     (t) => t.projectId === project.id
                   );
+                  const projectTodos = todos.filter(
+                    (t) => t.projectId === project.id
+                  );
+                  const completedTodos = projectTodos.filter(
+                    (t) => t.completed
+                  ).length;
+
                   return (
-                    <div
-                      key={project.id}
-                      className="border border-border rounded-xl p-3 hover:border-noki-primary/30 transition-all group"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`w-10 h-10 ${project.color} rounded-lg flex-shrink-0`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-foreground truncate">
-                            {project.name}
-                          </h4>
-                          {"description" in project && project.description && (
-                            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
-                              {project.description}
-                            </p>
-                          )}
-                          {"code" in project && (
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {project.code}
-                            </p>
-                          )}
+                    <Col xs={24} sm={12} lg={8} key={project.id}>
+                      <Card
+                        hoverable
+                        className="h-full border-2 hover:border-noki-primary/30 transition-all"
+                        style={{
+                          borderColor: project.color
+                            .replace("bg-", "")
+                            .replace("-400", "-200"),
+                          backgroundColor: `${project.color
+                            .replace("bg-", "")
+                            .replace("-400", "-50")}10`,
+                        }}
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <Avatar
+                            size={36}
+                            className={`${project.color} flex items-center justify-center shadow-sm`}
+                            icon={
+                              project.type === "personal" ? (
+                                <FolderOutlined />
+                              ) : (
+                                <BookOutlined />
+                              )
+                            }
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-foreground text-base mb-1 truncate">
+                              {project.name}
+                            </h4>
+                            {"description" in project &&
+                              project.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                                  {project.description}
+                                </p>
+                              )}
+                            {"code" in project && (
+                              <Tag color="blue" className="mb-1">
+                                {project.code}
+                              </Tag>
+                            )}
+                            <Tag
+                              color={
+                                project.type === "personal" ? "green" : "blue"
+                              }
+                            >
+                              {project.type}
+                            </Tag>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-4">
+                              <div className="flex items-center gap-3">
+                                <span className="flex items-center gap-1">
+                                  <span className="font-semibold text-noki-primary">
+                                    {projectTasks.length}
+                                  </span>
+                                  tasks
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="font-semibold text-orange-500">
+                                    {projectTodos.length}
+                                  </span>
+                                  todos
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="font-semibold text-green-500">
+                                    {completedTodos}
+                                  </span>
+                                  done
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleEditProject(project)}
-                            className="p-2 hover:bg-muted rounded-lg transition-colors"
-                          >
-                            <Edit2
-                              size={14}
-                              className="text-muted-foreground hover:text-foreground"
+
+                        {/* Actions aligned to bottom right */}
+                        <div className="flex justify-end gap-1 mt-auto pt-2 border-t border-border/50">
+                          <Tooltip title="Edit Project">
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<EditOutlined />}
+                              onClick={() => handleEditProject(project)}
+                              className="text-muted-foreground hover:text-noki-primary"
                             />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(project.id, "project")}
-                            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={14} className="text-red-400" />
-                          </button>
+                          </Tooltip>
+                          <Tooltip title="Delete Project">
+                            <Button
+                              type="text"
+                              size="small"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={() =>
+                                handleDelete(project.id, "project")
+                              }
+                            />
+                          </Tooltip>
                         </div>
-                      </div>
-                      {projectTasks.length > 0 && (
-                        <button
-                          onClick={() => toggleProject(project.id)}
-                          className="mt-2 w-full text-left text-xs text-noki-primary hover:text-noki-primary/80 flex items-center gap-1"
-                        >
-                          {expandedProjects.has(project.id) ? (
-                            <ChevronDown size={14} />
-                          ) : (
-                            <ChevronRight size={14} />
-                          )}
-                          Manage {projectTasks.length} Tasks
-                        </button>
-                      )}
-                    </div>
+                      </Card>
+                    </Col>
                   );
                 })}
-              </div>
+              </Row>
+
+              {allProjects.length === 0 && (
+                <Empty
+                  description="No projects yet"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                >
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setShowAddForm(true)}
+                  >
+                    Create Your First Project
+                  </Button>
+                </Empty>
+              )}
             </div>
           )}
 
           {/* Tasks Tab */}
           {activeTab === "tasks" && (
-            <div className="space-y-3">
+            <div className="space-y-4 flex flex-col gap-4">
               {/* Add Task Button */}
               {!showAddForm && !editingId && (
-                <button
+                <Card
+                  hoverable
                   onClick={() => setShowAddForm(true)}
-                  className="w-full p-4 border-2 border-dashed border-noki-tertiary/30 rounded-xl hover:border-noki-tertiary/50 hover:bg-noki-tertiary/5 transition-all group"
+                  className="border-2 border-dashed border-noki-tertiary/30 hover:border-noki-tertiary/50 transition-all cursor-pointer"
                 >
-                  <div className="flex items-center justify-center gap-2 text-noki-tertiary">
-                    <Plus size={20} />
-                    <span className="font-medium">Add New Task</span>
+                  <div className="text-center py-6">
+                    <div className="w-12 h-12 bg-noki-tertiary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <PlusOutlined className="text-noki-tertiary text-xl" />
+                    </div>
+                    <h4 className="text-base font-semibold text-foreground mb-1">
+                      Create New Task
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Add a new task to organize your work
+                    </p>
                   </div>
-                </button>
+                </Card>
               )}
 
               {/* Add/Edit Task Form */}
               {(showAddForm || editingId) && activeTab === "tasks" && (
-                <div className="border-2 border-noki-tertiary/30 rounded-xl p-4 bg-noki-tertiary/5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-foreground">
-                      {editingId ? "Edit Task" : "New Task"}
-                    </h4>
-                    <button
+                <Card
+                  title={editingId ? "Edit Task" : "New Task"}
+                  extra={
+                    <Button
+                      type="text"
+                      icon={<X size={16} />}
                       onClick={() => {
                         setShowAddForm(false);
                         setEditingId("");
                         resetForm();
                       }}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
+                    />
+                  }
+                  className="border-noki-tertiary/30"
+                >
+                  <Form layout="vertical" className="space-y-4">
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} md={12}>
+                        <Form.Item label="Project" required>
+                          <Select
+                            value={taskProject}
+                            onChange={setTaskProject}
+                            placeholder="Select project..."
+                            size="large"
+                            className="w-full"
+                          >
+                            {allProjects.map((project) => (
+                              <Select.Option
+                                key={project.id}
+                                value={project.id}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className={`w-3 h-3 ${project.color} rounded-full`}
+                                  />
+                                  {project.name}
+                                </div>
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={12}>
+                        <Form.Item label="Due Date & Time">
+                          <DateTimePicker
+                            value={taskDueDateTime}
+                            onChange={setTaskDueDateTime}
+                            placeholder="Select due date and time..."
+                            className="w-full"
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
 
-                  <select
-                    value={taskProject}
-                    onChange={(e) => setTaskProject(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-noki-primary text-sm"
-                  >
-                    <option value="">Select project...</option>
-                    {allProjects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
+                    <Form.Item label="Task Title" required>
+                      <Input
+                        value={taskTitle}
+                        onChange={(e) => setTaskTitle(e.target.value)}
+                        placeholder="Enter task title..."
+                        size="large"
+                        className="w-full"
+                      />
+                    </Form.Item>
 
-                  <input
-                    type="text"
-                    value={taskTitle}
-                    onChange={(e) => setTaskTitle(e.target.value)}
-                    placeholder="Task title..."
-                    className="w-full p-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-noki-primary text-sm"
-                  />
-
-                  <DateTimePicker
-                    value={taskDueDateTime}
-                    onChange={setTaskDueDateTime}
-                    placeholder="Select due date and time..."
-                  />
-
-                  <div className="flex gap-2">
-                    <NokiButton
-                      onClick={handleSaveTask}
-                      variant="positive"
-                      size="sm"
-                      disabled={!taskTitle.trim() || !taskProject}
-                    >
-                      {editingId ? "Save Changes" : "Create Task"}
-                    </NokiButton>
-                    <NokiButton
-                      onClick={() => {
-                        setShowAddForm(false);
-                        setEditingId("");
-                        resetForm();
-                      }}
-                      variant="neutral"
-                      size="sm"
-                    >
-                      Cancel
-                    </NokiButton>
-                  </div>
-                </div>
+                    <div className="flex gap-3 pt-4">
+                      <NokiButton
+                        onClick={handleSaveTask}
+                        variant="positive"
+                        size="sm"
+                        disabled={!taskTitle.trim() || !taskProject}
+                        className="flex-1"
+                      >
+                        {editingId ? "Save Changes" : "Create Task"}
+                      </NokiButton>
+                      <NokiButton
+                        onClick={() => {
+                          setShowAddForm(false);
+                          setEditingId("");
+                          resetForm();
+                        }}
+                        variant="negative"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        Cancel
+                      </NokiButton>
+                    </div>
+                  </Form>
+                </Card>
               )}
 
-              {/* Tasks List Grouped by Project */}
-              <div className="space-y-3">
+              {/* Tasks by Project */}
+              <div className="space-y-3 flex flex-col gap-4">
                 {allProjects.map((project) => {
                   const projectTasks = tasks.filter(
                     (t) => t.projectId === project.id
@@ -646,96 +837,139 @@ export function ManageProjectsModal({
                   if (projectTasks.length === 0) return null;
 
                   return (
-                    <div
+                    <Card
                       key={project.id}
-                      className="border border-border rounded-xl overflow-hidden"
+                      className="border-2 hover:border-noki-primary/30 transition-all"
+                      style={{
+                        borderColor: project.color
+                          .replace("bg-", "")
+                          .replace("-400", "-200"),
+                        backgroundColor: `${project.color
+                          .replace("bg-", "")
+                          .replace("-400", "-50")}05`,
+                      }}
                     >
-                      <button
-                        onClick={() => toggleProject(project.id)}
-                        className="w-full p-3 bg-muted/30 hover:bg-muted/50 transition-colors flex items-center gap-3"
-                      >
-                        {expandedProjects.has(project.id) ? (
-                          <ChevronDown
-                            size={16}
-                            className="text-muted-foreground"
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            size={28}
+                            className={`${project.color} flex items-center justify-center shadow-sm`}
+                            icon={
+                              project.type === "personal" ? (
+                                <FolderOutlined />
+                              ) : (
+                                <BookOutlined />
+                              )
+                            }
                           />
-                        ) : (
-                          <ChevronRight
-                            size={16}
-                            className="text-muted-foreground"
-                          />
-                        )}
-                        <div
-                          className={`w-8 h-8 ${project.color} rounded-lg flex-shrink-0`}
-                        />
-                        <span className="font-semibold text-foreground text-sm">
-                          {project.name}
-                        </span>
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          {projectTasks.length} tasks
-                        </span>
-                      </button>
+                          <div>
+                            <h4 className="font-semibold text-foreground text-sm mb-0">
+                              {project.name}
+                            </h4>
+                            <p className="text-xs text-muted-foreground mb-0">
+                              {projectTasks.length} tasks
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={
+                            expandedProjects.has(project.id) ? (
+                              <ChevronDown size={14} />
+                            ) : (
+                              <ChevronRight size={14} />
+                            )
+                          }
+                          onClick={() => toggleProject(project.id)}
+                          className="text-muted-foreground hover:text-noki-primary"
+                        >
+                          {expandedProjects.has(project.id)
+                            ? "Collapse"
+                            : "Expand"}
+                        </Button>
+                      </div>
 
                       {expandedProjects.has(project.id) && (
-                        <div className="p-2 space-y-2">
-                          {projectTasks.map((task) => (
-                            <div
-                              key={task.id}
-                              className="border border-border rounded-lg p-3 hover:border-noki-primary/30 transition-all group"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <h5 className="font-medium text-foreground text-sm">
-                                    {task.title}
-                                  </h5>
-                                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                    <span className="flex items-center gap-1">
-                                      <CalendarIcon size={12} />
-                                      {task.dueDate}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Clock size={12} />
-                                      {task.dueTime}
-                                    </span>
+                        <div className="pt-3 border-t border-border/50">
+                          <Row gutter={[12, 12]}>
+                            {projectTasks.map((task) => (
+                              <Col xs={24} sm={12} lg={8} key={task.id}>
+                                <Card
+                                  size="small"
+                                  hoverable
+                                  className="h-full border border-border/50 hover:border-noki-primary/30 transition-all"
+                                >
+                                  <div className="mb-2">
+                                    <h5 className="font-medium text-foreground text-sm mb-2">
+                                      {task.title}
+                                    </h5>
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                      <span className="flex items-center gap-1">
+                                        <CalendarOutlined />
+                                        {task.dueDate}
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <ClockCircleOutlined />
+                                        {task.dueTime}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={() => handleEditTask(task)}
-                                    className="p-2 hover:bg-muted rounded-lg transition-colors"
-                                  >
-                                    <Edit2
-                                      size={14}
-                                      className="text-muted-foreground hover:text-foreground"
-                                    />
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleDelete(task.id, "task")
-                                    }
-                                    className="p-2 hover:bg-red-500/10 rounded-lg transition-colors"
-                                  >
-                                    <Trash2
-                                      size={14}
-                                      className="text-red-400"
-                                    />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+
+                                  {/* Actions aligned to bottom right */}
+                                  <div className="flex justify-end gap-1 mt-auto pt-2 border-t border-border/30">
+                                    <Tooltip title="Edit Task">
+                                      <Button
+                                        type="text"
+                                        size="small"
+                                        icon={<EditOutlined />}
+                                        onClick={() => handleEditTask(task)}
+                                        className="text-muted-foreground hover:text-noki-primary"
+                                      />
+                                    </Tooltip>
+                                    <Tooltip title="Delete Task">
+                                      <Button
+                                        type="text"
+                                        size="small"
+                                        danger
+                                        icon={<DeleteOutlined />}
+                                        onClick={() =>
+                                          handleDelete(task.id, "task")
+                                        }
+                                      />
+                                    </Tooltip>
+                                  </div>
+                                </Card>
+                              </Col>
+                            ))}
+                          </Row>
                         </div>
                       )}
-                    </div>
+                    </Card>
                   );
                 })}
               </div>
+
+              {tasks.length === 0 && (
+                <Empty
+                  description="No tasks yet"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                >
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setShowAddForm(true)}
+                  >
+                    Create Your First Task
+                  </Button>
+                </Empty>
+              )}
             </div>
           )}
 
           {/* Todos Tab */}
           {activeTab === "todos" && (
-            <div className="space-y-3">
+            <div className="space-y-4 flex flex-col gap-4">
               {/* Filter Buttons */}
               <div className="flex gap-2">
                 <button
@@ -772,94 +1006,131 @@ export function ManageProjectsModal({
 
               {/* Add Todo Button */}
               {!showAddForm && !editingId && (
-                <button
+                <Card
+                  hoverable
                   onClick={() => setShowAddForm(true)}
-                  className="w-full p-4 border-2 border-dashed border-orange-400/30 rounded-xl hover:border-orange-400/50 hover:bg-orange-400/5 transition-all group"
+                  className="border-2 border-dashed border-orange-400/30 hover:border-orange-400/50 transition-all cursor-pointer mb-4"
                 >
-                  <div className="flex items-center justify-center gap-2 text-orange-600">
-                    <Plus size={20} />
-                    <span className="font-medium">Add New Todo</span>
+                  <div className="text-center py-6">
+                    <div className="w-12 h-12 bg-orange-400/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <PlusOutlined className="text-orange-500 text-xl" />
+                    </div>
+                    <h4 className="text-base font-semibold text-foreground mb-1">
+                      Create New Todo
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Add a new todo to track your progress
+                    </p>
                   </div>
-                </button>
+                </Card>
               )}
 
               {/* Add/Edit Todo Form */}
               {(showAddForm || editingId) && activeTab === "todos" && (
-                <div className="border-2 border-orange-400/30 rounded-xl p-4 bg-orange-400/5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-foreground">
-                      {editingId ? "Edit Todo" : "New Todo"}
-                    </h4>
-                    <button
+                <Card
+                  title={editingId ? "Edit Todo" : "New Todo"}
+                  extra={
+                    <Button
+                      type="text"
+                      icon={<X size={16} />}
                       onClick={() => {
                         setShowAddForm(false);
                         setEditingId("");
                         resetForm();
                       }}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
+                    />
+                  }
+                  className="border-orange-400/30"
+                >
+                  <Form layout="vertical" className="space-y-4">
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} md={12}>
+                        <Form.Item label="Task" required>
+                          <Select
+                            value={todoTask}
+                            onChange={setTodoTask}
+                            placeholder="Select task..."
+                            size="large"
+                            className="w-full"
+                          >
+                            {tasks.map((task) => {
+                              const project = allProjects.find(
+                                (p) => p.id === task.projectId
+                              );
+                              return (
+                                <Select.Option key={task.id} value={task.id}>
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={`w-3 h-3 ${
+                                        project?.color || "bg-gray-400"
+                                      } rounded-full`}
+                                    />
+                                    <div>
+                                      <div className="font-medium">
+                                        {task.title}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {project?.name}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Select.Option>
+                              );
+                            })}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={12}>
+                        <Form.Item label="Due Date & Time">
+                          <DateTimePicker
+                            value={todoDueDateTime}
+                            onChange={setTodoDueDateTime}
+                            placeholder="Select due date and time..."
+                            className="w-full"
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
 
-                  <select
-                    value={todoTask}
-                    onChange={(e) => setTodoTask(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-noki-primary text-sm"
-                  >
-                    <option value="">Select task...</option>
-                    {tasks.map((task) => {
-                      const project = allProjects.find(
-                        (p) => p.id === task.projectId
-                      );
-                      return (
-                        <option key={task.id} value={task.id}>
-                          {task.title} ({project?.name})
-                        </option>
-                      );
-                    })}
-                  </select>
+                    <Form.Item label="Todo Title" required>
+                      <Input
+                        value={todoTitle}
+                        onChange={(e) => setTodoTitle(e.target.value)}
+                        placeholder="Enter todo title..."
+                        size="large"
+                        className="w-full"
+                      />
+                    </Form.Item>
 
-                  <input
-                    type="text"
-                    value={todoTitle}
-                    onChange={(e) => setTodoTitle(e.target.value)}
-                    placeholder="Todo title..."
-                    className="w-full p-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-noki-primary text-sm"
-                  />
-
-                  <DateTimePicker
-                    value={todoDueDateTime}
-                    onChange={setTodoDueDateTime}
-                    placeholder="Select due date and time..."
-                  />
-
-                  <div className="flex gap-2">
-                    <NokiButton
-                      onClick={handleSaveTodo}
-                      variant="positive"
-                      size="sm"
-                      disabled={!todoTitle.trim() || !todoTask}
-                    >
-                      {editingId ? "Save Changes" : "Create Todo"}
-                    </NokiButton>
-                    <NokiButton
-                      onClick={() => {
-                        setShowAddForm(false);
-                        setEditingId("");
-                        resetForm();
-                      }}
-                      variant="neutral"
-                      size="sm"
-                    >
-                      Cancel
-                    </NokiButton>
-                  </div>
-                </div>
+                    <div className="flex gap-3 pt-4">
+                      <NokiButton
+                        onClick={handleSaveTodo}
+                        variant="positive"
+                        size="sm"
+                        disabled={!todoTitle.trim() || !todoTask}
+                        className="flex-1"
+                      >
+                        {editingId ? "Save Changes" : "Create Todo"}
+                      </NokiButton>
+                      <NokiButton
+                        onClick={() => {
+                          setShowAddForm(false);
+                          setEditingId("");
+                          resetForm();
+                        }}
+                        variant="negative"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        Cancel
+                      </NokiButton>
+                    </div>
+                  </Form>
+                </Card>
               )}
 
               {/* Todos List */}
-              <div className="space-y-2">
+              <div className="space-y-2 flex flex-col gap-4">
                 {todos
                   .filter(
                     (todo) => todoFilter === "all" || todo.type === todoFilter
@@ -871,9 +1142,11 @@ export function ManageProjectsModal({
                     );
 
                     return (
-                      <div
+                      <Card
                         key={todo.id}
-                        className="border border-border rounded-lg p-3 hover:border-noki-primary/30 transition-all group"
+                        size="small"
+                        hoverable
+                        className="border border-border/50 hover:border-noki-primary/30 transition-all"
                       >
                         <div className="flex items-start gap-3">
                           <button
@@ -885,12 +1158,12 @@ export function ManageProjectsModal({
                             }`}
                           >
                             {todo.completed && (
-                              <Check size={14} className="text-white" />
+                              <Check size={12} className="text-white" />
                             )}
                           </button>
                           <div className="flex-1 min-w-0">
                             <h5
-                              className={`font-medium text-sm ${
+                              className={`font-medium text-sm mb-1 ${
                                 todo.completed
                                   ? "line-through text-muted-foreground"
                                   : "text-foreground"
@@ -898,9 +1171,9 @@ export function ManageProjectsModal({
                             >
                               {todo.title}
                             </h5>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap mb-2">
                               <span
-                                className={`px-2 py-0.5 rounded-full ${
+                                className={`px-2 py-0.5 rounded-full text-xs ${
                                   todo.type === "personal"
                                     ? "bg-noki-primary/20 text-noki-primary"
                                     : "bg-blue-500/20 text-blue-400"
@@ -912,36 +1185,41 @@ export function ManageProjectsModal({
                               <span>•</span>
                               <span>{project?.name}</span>
                             </div>
-                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
-                                <CalendarIcon size={12} />
+                                <CalendarOutlined />
                                 {todo.dueDate}
                               </span>
                               <span className="flex items-center gap-1">
-                                <Clock size={12} />
+                                <ClockCircleOutlined />
                                 {todo.dueTime}
                               </span>
                             </div>
                           </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleEditTodo(todo)}
-                              className="p-2 hover:bg-muted rounded-lg transition-colors"
-                            >
-                              <Edit2
-                                size={14}
-                                className="text-muted-foreground hover:text-foreground"
+
+                          {/* Actions aligned to bottom right */}
+                          <div className="flex gap-1 mt-auto">
+                            <Tooltip title="Edit Todo">
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<EditOutlined />}
+                                onClick={() => handleEditTodo(todo)}
+                                className="text-muted-foreground hover:text-noki-primary"
                               />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(todo.id, "todo")}
-                              className="p-2 hover:bg-red-500/10 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={14} className="text-red-400" />
-                            </button>
+                            </Tooltip>
+                            <Tooltip title="Delete Todo">
+                              <Button
+                                type="text"
+                                size="small"
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() => handleDelete(todo.id, "todo")}
+                              />
+                            </Tooltip>
                           </div>
                         </div>
-                      </div>
+                      </Card>
                     );
                   })}
               </div>

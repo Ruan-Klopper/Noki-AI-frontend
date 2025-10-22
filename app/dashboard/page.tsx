@@ -292,17 +292,19 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-3">
             {courses.map((course) => (
               <Link key={course.id} href="/projects">
-                <div
-                  className={`${course.color} text-white p-4 rounded-2xl shadow-md relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2 border-white/20`}
-                >
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500"></div>
-                  <div className="relative z-10">
-                    <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-bold inline-block mb-2">
-                      {course.code}
-                    </span>
-                    <h3 className="font-poppins font-bold text-sm leading-tight line-clamp-2">
-                      {course.name}
-                    </h3>
+                <div className="aspect-square">
+                  <div
+                    className={`${course.color} text-white p-4 rounded-2xl shadow-md relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2 border-white/20 h-full flex flex-col justify-end`}
+                  >
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500"></div>
+                    <div className="relative z-10">
+                      <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-bold inline-block mb-2">
+                        {course.code}
+                      </span>
+                      <h3 className="font-poppins font-bold text-sm leading-tight line-clamp-2">
+                        {course.name}
+                      </h3>
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -331,31 +333,35 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-3">
             {projects.map((project) => (
               <Link key={project.id} href="/projects">
-                <div
-                  className={`${project.color} text-white p-4 rounded-2xl shadow-md relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2 border-white/20`}
-                >
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500"></div>
-                  <div className="relative z-10">
-                    <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-bold inline-block mb-2">
-                      {project.status}
-                    </span>
-                    <h3 className="font-poppins font-bold text-sm leading-tight line-clamp-2">
-                      {project.name}
-                    </h3>
+                <div className="aspect-square">
+                  <div
+                    className={`${project.color} text-white p-4 rounded-2xl shadow-md relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2 border-white/20 h-full flex flex-col justify-end`}
+                  >
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500"></div>
+                    <div className="relative z-10">
+                      <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-bold inline-block mb-2">
+                        {project.status}
+                      </span>
+                      <h3 className="font-poppins font-bold text-sm leading-tight line-clamp-2">
+                        {project.name}
+                      </h3>
+                    </div>
                   </div>
                 </div>
               </Link>
             ))}
 
-            <button
-              onClick={() => setIsManageModalOpen(true)}
-              className="bg-background hover:bg-blue-500/20 border-2 border-dashed border-border hover:border-blue-500 p-4 rounded-2xl transition-all duration-300 group min-h-[80px] flex items-center justify-center"
-            >
-              <div className="flex items-center gap-2 text-muted-foreground group-hover:text-blue-500 transition-colors">
-                <Plus size={16} />
-                <span className="font-semibold text-xs">New Project</span>
-              </div>
-            </button>
+            <div className="aspect-square">
+              <button
+                onClick={() => setIsManageModalOpen(true)}
+                className="bg-background hover:bg-blue-500/20 border-2 border-dashed border-border hover:border-blue-500 p-4 rounded-2xl transition-all duration-300 group h-full w-full flex items-center justify-center"
+              >
+                <div className="flex items-center gap-2 text-muted-foreground group-hover:text-blue-500 transition-colors">
+                  <Plus size={16} />
+                  <span className="font-semibold text-xs">New Project</span>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 

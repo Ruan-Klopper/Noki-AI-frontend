@@ -9,7 +9,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { TimePicker } from "antd";
+import { ClockCircleOutlined } from "@ant-design/icons";
 import { cn } from "@/lib/utils";
+import dayjs from "dayjs";
 
 interface DateTimePickerProps {
   value?: Date;
@@ -32,15 +35,15 @@ export function DateTimePicker({
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
     value
   );
-  const [hours, setHours] = React.useState(value ? value.getHours() : 12);
-  const [minutes, setMinutes] = React.useState(value ? value.getMinutes() : 0);
+  const [selectedTime, setSelectedTime] = React.useState<
+    dayjs.Dayjs | undefined
+  >(value ? dayjs(value) : undefined);
   const [allDay, setAllDay] = React.useState(isAllDay);
 
   React.useEffect(() => {
     if (value) {
       setSelectedDate(value);
-      setHours(value.getHours());
-      setMinutes(value.getMinutes());
+      setSelectedTime(dayjs(value));
     }
   }, [value]);
 
@@ -53,25 +56,29 @@ export function DateTimePicker({
       const newDate = new Date(date);
       if (allDay) {
         newDate.setHours(0, 0, 0, 0);
+      } else if (selectedTime) {
+        newDate.setHours(selectedTime.hour());
+        newDate.setMinutes(selectedTime.minute());
       } else {
-        newDate.setHours(hours);
-        newDate.setMinutes(minutes);
+        // Default to noon if no time is selected
+        newDate.setHours(12, 0, 0, 0);
       }
       setSelectedDate(newDate);
       onChange(newDate);
     }
   };
 
-  const handleTimeChange = (newHours: number, newMinutes: number) => {
-    setHours(newHours);
-    setMinutes(newMinutes);
+  const handleTimeChange = (time: dayjs.Dayjs | null) => {
+    if (time) {
+      setSelectedTime(time);
 
-    if (selectedDate) {
-      const newDate = new Date(selectedDate);
-      newDate.setHours(newHours);
-      newDate.setMinutes(newMinutes);
-      setSelectedDate(newDate);
-      onChange(newDate);
+      if (selectedDate) {
+        const newDate = new Date(selectedDate);
+        newDate.setHours(time.hour());
+        newDate.setMinutes(time.minute());
+        setSelectedDate(newDate);
+        onChange(newDate);
+      }
     }
   };
 
@@ -84,9 +91,12 @@ export function DateTimePicker({
       const newDate = new Date(selectedDate);
       if (newAllDay) {
         newDate.setHours(0, 0, 0, 0);
+      } else if (selectedTime) {
+        newDate.setHours(selectedTime.hour());
+        newDate.setMinutes(selectedTime.minute());
       } else {
-        newDate.setHours(hours);
-        newDate.setMinutes(minutes);
+        // Default to noon if switching from all-day to timed
+        newDate.setHours(12, 0, 0, 0);
       }
       setSelectedDate(newDate);
       onChange(newDate);
@@ -95,8 +105,7 @@ export function DateTimePicker({
 
   const handleClear = () => {
     setSelectedDate(undefined);
-    setHours(12);
-    setMinutes(0);
+    setSelectedTime(undefined);
     setAllDay(false);
     onChange(undefined);
     onAllDayChange?.(false);
@@ -175,47 +184,18 @@ export function DateTimePicker({
                   </span>
                 </div>
 
-                <div className="space-y-2">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Hours
-                    </label>
-                    <select
-                      value={hours}
-                      onChange={(e) =>
-                        handleTimeChange(
-                          Number.parseInt(e.target.value),
-                          minutes
-                        )
-                      }
-                      className="w-full p-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-noki-primary"
-                    >
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <option key={i} value={i}>
-                          {i.toString().padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Minutes
-                    </label>
-                    <select
-                      value={minutes}
-                      onChange={(e) =>
-                        handleTimeChange(hours, Number.parseInt(e.target.value))
-                      }
-                      className="w-full p-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-noki-primary"
-                    >
-                      {Array.from({ length: 60 }, (_, i) => (
-                        <option key={i} value={i}>
-                          {i.toString().padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <TimePicker
+                    value={selectedTime}
+                    onChange={handleTimeChange}
+                    placeholder="Select time"
+                    className="w-full"
+                    suffixIcon={<ClockCircleOutlined />}
+                    format="HH:mm"
+                    minuteStep={15}
+                    showNow={false}
+                    allowClear
+                  />
                 </div>
               </div>
             )}

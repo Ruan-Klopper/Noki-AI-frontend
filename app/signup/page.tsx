@@ -5,6 +5,29 @@ import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Check, Eye, EyeOff } from "lucide-react";
 import { useAuthContext } from "@/services/auth/auth-context";
+import {
+  Button,
+  Card,
+  Space,
+  Typography,
+  Input,
+  Checkbox,
+  Spin,
+  Select,
+  Radio,
+  Alert,
+  Modal,
+} from "antd";
+import {
+  UserOutlined,
+  LockOutlined,
+  LoadingOutlined,
+  CheckCircleOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  ExclamationCircleOutlined,
+  CheckCircleFilled,
+} from "@ant-design/icons";
 import "@/styles/google-signin.css";
 
 export default function SignUpPage() {
@@ -16,8 +39,10 @@ export default function SignUpPage() {
     initializeGoogleAuth,
     googleLoading,
     renderGoogleButton,
+    showNotification,
   } = useAuthContext();
   const [step, setStep] = useState(1);
+  const [googleButtonRendered, setGoogleButtonRendered] = useState(false);
 
   // Handle URL step parameter for Google Sign-In redirect
   useEffect(() => {
@@ -36,41 +61,101 @@ export default function SignUpPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Initialize Google Auth and render button on component mount
+  // Initialize Google Auth on component mount
   useEffect(() => {
-    const initAndRender = async () => {
+    const initGoogleAuth = async () => {
       try {
         await initializeGoogleAuth();
-        // Render the Google Sign-In button after initialization
-        renderGoogleButton("google-signup-button", {
-          theme: "outline",
-          size: "large",
-          text: "signup_with",
-          shape: "pill",
-          logo_alignment: "center",
-          width: 320,
-        });
-
-        // Apply custom styling after button renders
-        setTimeout(() => {
-          const googleButton = document.querySelector(
-            "#google-signup-button iframe"
-          );
-          if (googleButton) {
-            // Add custom classes or styles
-            (googleButton as HTMLElement).style.borderRadius = "12px";
-            (googleButton as HTMLElement).style.boxShadow =
-              "0 4px 12px rgba(0, 0, 0, 0.15)";
-            (googleButton as HTMLElement).style.transition = "all 0.3s ease";
-          }
-        }, 100);
       } catch (error) {
         console.error("Failed to initialize Google Auth:", error);
       }
     };
 
-    initAndRender();
-  }, [initializeGoogleAuth, renderGoogleButton]);
+    initGoogleAuth();
+  }, [initializeGoogleAuth]);
+
+  // Render Google button when step changes to 2
+  useEffect(() => {
+    const renderGoogleSignupButton = () => {
+      // Only render if we're on step 2 and the element exists
+      if (step === 2) {
+        const element = document.getElementById("google-signup-button");
+        if (element) {
+          // Clear any existing content
+          element.innerHTML = "";
+
+          // Render the Google Sign-In button
+          renderGoogleButton("google-signup-button", {
+            theme: "outline",
+            size: "large",
+            text: "signup_with",
+            shape: "pill",
+            logo_alignment: "center",
+            width: 320,
+          });
+
+          // Apply custom styling after button renders with multiple attempts
+          const applyStyling = (attempts = 0) => {
+            const googleButton = document.querySelector(
+              "#google-signup-button iframe"
+            );
+            if (googleButton) {
+              // Add custom classes or styles
+              (googleButton as HTMLElement).style.borderRadius = "12px";
+              (googleButton as HTMLElement).style.boxShadow =
+                "0 4px 12px rgba(0, 0, 0, 0.15)";
+              (googleButton as HTMLElement).style.transition = "all 0.3s ease";
+              setGoogleButtonRendered(true);
+            } else if (attempts < 5) {
+              // Retry if button not found (up to 5 attempts)
+              setTimeout(() => applyStyling(attempts + 1), 200);
+            }
+          };
+
+          setTimeout(() => applyStyling(), 100);
+        }
+      } else {
+        // Reset the rendered state when not on step 2
+        setGoogleButtonRendered(false);
+      }
+    };
+
+    // Render with a delay to ensure DOM is ready
+    if (step === 2) {
+      const timeoutId = setTimeout(renderGoogleSignupButton, 100);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setGoogleButtonRendered(false);
+    }
+  }, [step, renderGoogleButton]);
+
+  // Auto-retry Google button rendering if it doesn't appear
+  useEffect(() => {
+    if (step === 2 && !googleButtonRendered) {
+      const timeoutId = setTimeout(() => {
+        // Check if button still hasn't rendered after 3 seconds
+        const element = document.getElementById("google-signup-button");
+        const iframe = element?.querySelector("iframe");
+
+        if (element && !iframe) {
+          console.log(
+            "Google button not rendered after timeout, attempting retry..."
+          );
+          element.innerHTML = "";
+          renderGoogleButton("google-signup-button", {
+            theme: "outline",
+            size: "large",
+            text: "signup_with",
+            shape: "pill",
+            logo_alignment: "center",
+            width: 320,
+          });
+        }
+      }, 3000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [step, googleButtonRendered, renderGoogleButton]);
 
   // Step 1: Terms
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -167,6 +252,13 @@ export default function SignUpPage() {
     setSuccess(false);
     setIsSubmitting(true);
 
+    // Show loading notification
+    showNotification(
+      "info",
+      "Creating your account...",
+      "Please wait while we set up your Noki account"
+    );
+
     try {
       const response = await register({
         firstname: firstname.trim(),
@@ -177,23 +269,32 @@ export default function SignUpPage() {
 
       if (response.success) {
         setSuccess(true);
+        showNotification(
+          "success",
+          "Account created successfully!",
+          "Welcome to Noki! Redirecting to LMS setup..."
+        );
         // Show success message for 2 seconds before proceeding to step 3
         setTimeout(() => {
           setStep(3);
           setSuccess(false); // Clear success message
         }, 2000);
       } else {
-        setError(response.message || "Sign up failed");
+        const errorMessage = response.message || "Sign up failed";
+        setError(errorMessage);
+        showNotification("error", "Sign up failed", errorMessage);
       }
     } catch (error: any) {
       console.error("Registration error:", error);
 
       // Handle backend error responses directly
+      let errorMessage = "An error occurred during sign up";
       if (error.message) {
-        setError(error.message);
-      } else {
-        setError("An error occurred during sign up");
+        errorMessage = error.message;
       }
+
+      setError(errorMessage);
+      showNotification("error", "Sign up failed", errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -324,33 +425,19 @@ export default function SignUpPage() {
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-roboto font-semibold text-red-800 mb-1">
-                        Validation Error
-                      </h3>
-                      <p className="text-sm text-red-600 font-roboto">
-                        {error}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <Alert
+                  message="Validation Error"
+                  description={error}
+                  type="error"
+                  icon={<ExclamationCircleOutlined />}
+                  showIcon
+                  className="mb-4"
+                  style={{
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                    borderColor: "rgba(239, 68, 68, 0.3)",
+                    color: "#f8fafc",
+                  }}
+                />
               )}
 
               <div className="space-y-4">
@@ -501,14 +588,50 @@ export default function SignUpPage() {
                 <div className="w-full">
                   {googleLoading ? (
                     <div className="w-full px-4 py-3 rounded-lg border border-border bg-secondary text-foreground font-roboto font-medium flex items-center justify-center gap-3 opacity-50">
-                      <div className="w-5 h-5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+                      <Spin
+                        indicator={
+                          <LoadingOutlined
+                            style={{ fontSize: 20, color: "#1d72a6" }}
+                            spin
+                          />
+                        }
+                      />
                       Signing up with Google...
                     </div>
                   ) : (
-                    <div
-                      id="google-signup-button"
-                      className="w-full flex items-center justify-center google-signin-container"
-                    ></div>
+                    <div className="w-full">
+                      <div
+                        id="google-signup-button"
+                        className="w-full flex items-center justify-center google-signin-container"
+                      ></div>
+                      {step === 2 && !googleButtonRendered && (
+                        <div className="mt-2 text-center">
+                          <Button
+                            type="link"
+                            size="small"
+                            onClick={() => {
+                              const element = document.getElementById(
+                                "google-signup-button"
+                              );
+                              if (element) {
+                                element.innerHTML = "";
+                                renderGoogleButton("google-signup-button", {
+                                  theme: "outline",
+                                  size: "large",
+                                  text: "signup_with",
+                                  shape: "pill",
+                                  logo_alignment: "center",
+                                  width: 320,
+                                });
+                              }
+                            }}
+                            className="text-xs text-muted-foreground hover:text-noki-primary"
+                          >
+                            Google button not loading? Click to retry
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -682,38 +805,41 @@ export default function SignUpPage() {
                 )}
 
                 {connectionTested && userProfile && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Check className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-roboto font-semibold text-gray-800 mb-1">
-                          Connection Successful!
-                        </h3>
-                        <p className="text-sm text-gray-600 font-roboto">
-                          Welcome,{" "}
-                          <strong className="text-foreground">
-                            {userProfile.name}
-                          </strong>
+                  <Alert
+                    message="Connection Successful!"
+                    description={
+                      <div>
+                        <p className="mb-1">
+                          Welcome, <strong>{userProfile.name}</strong>
                         </p>
-                        <p className="text-sm text-gray-600 font-roboto">
-                          {userProfile.email}
-                        </p>
+                        <p>{userProfile.email}</p>
                       </div>
-                    </div>
-                  </div>
+                    }
+                    type="success"
+                    icon={<CheckCircleFilled />}
+                    showIcon
+                    className="mb-4"
+                    style={{
+                      backgroundColor: "rgba(16, 185, 129, 0.1)",
+                      borderColor: "rgba(16, 185, 129, 0.3)",
+                      color: "#f8fafc",
+                    }}
+                  />
                 )}
 
                 {syncingData && (
-                  <div className="bg-secondary border border-border rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 border-2 border-noki-primary border-t-transparent rounded-full animate-spin" />
-                      <p className="text-sm text-foreground font-roboto">
-                        Syncing your data with Noki...
-                      </p>
-                    </div>
-                  </div>
+                  <Alert
+                    message="Syncing your data with Noki..."
+                    type="info"
+                    icon={<LoadingOutlined spin />}
+                    showIcon
+                    className="mb-4"
+                    style={{
+                      backgroundColor: "rgba(29, 114, 166, 0.1)",
+                      borderColor: "rgba(29, 114, 166, 0.3)",
+                      color: "#f8fafc",
+                    }}
+                  />
                 )}
               </div>
             </div>
@@ -733,63 +859,53 @@ export default function SignUpPage() {
 
               {/* Success Message */}
               {success && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Check className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-roboto font-semibold text-green-800 mb-1">
-                        Account Created & Logged In!
-                      </h3>
-                      <p className="text-sm text-green-600 font-roboto">
-                        Welcome to Noki! You're now logged in. Proceeding to LMS
-                        setup...
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <Alert
+                  message="Account Created & Logged In!"
+                  description="Welcome to Noki! You're now logged in. Proceeding to LMS setup..."
+                  type="success"
+                  icon={<CheckCircleFilled />}
+                  showIcon
+                  className="mb-4"
+                  style={{
+                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                    borderColor: "rgba(16, 185, 129, 0.3)",
+                    color: "#f8fafc",
+                  }}
+                />
               )}
 
               {/* Error Message */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-roboto font-semibold text-red-800 mb-1">
-                        Registration Failed
-                      </h3>
-                      <p className="text-sm text-red-600 font-roboto mb-3">
-                        {error}
-                      </p>
-                      <button
+                <Alert
+                  message="Registration Failed"
+                  description={
+                    <div>
+                      <p className="mb-3">{error}</p>
+                      <Button
+                        type="primary"
+                        danger
+                        size="small"
                         onClick={() => {
                           setError("");
                           handleEmailSignUp();
                         }}
                         disabled={isSubmitting}
-                        className="px-4 py-2 bg-red-600 text-white text-sm font-roboto font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        loading={isSubmitting}
                       >
                         {isSubmitting ? "Retrying..." : "Try Again"}
-                      </button>
+                      </Button>
                     </div>
-                  </div>
-                </div>
+                  }
+                  type="error"
+                  icon={<ExclamationCircleOutlined />}
+                  showIcon
+                  className="mb-4"
+                  style={{
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                    borderColor: "rgba(239, 68, 68, 0.3)",
+                    color: "#f8fafc",
+                  }}
+                />
               )}
 
               <div className="space-y-4">

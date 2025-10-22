@@ -1,34 +1,35 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { useAuthContext } from "@/services/auth/auth-context";
 
 export default function HomePage() {
-  const router = useRouter()
-  const [loadingText, setLoadingText] = useState("Authenticating")
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuthContext();
 
   useEffect(() => {
-    const timer1 = setTimeout(() => {
-      setLoadingText("Loading your data")
-    }, 1000)
+    // Don't redirect while authentication is still loading
+    if (isLoading) return;
 
-    const timer2 = setTimeout(() => {
-      router.push("/dashboard")
-    }, 2000)
-
-    return () => {
-      clearTimeout(timer1)
-      clearTimeout(timer2)
+    // If user is authenticated, redirect to dashboard
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    } else {
+      // If user is not authenticated, redirect to sign in
+      router.push("/signin");
     }
-  }, [router])
+  }, [isAuthenticated, isLoading, router]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center space-y-6">
         <Loader2 className="w-12 h-12 text-noki-primary animate-spin mx-auto" />
-        <p className="text-xl font-poppins text-foreground">{loadingText}</p>
+        <p className="text-xl font-poppins text-foreground">
+          {isLoading ? "Checking authentication..." : "Redirecting..."}
+        </p>
       </div>
     </div>
-  )
+  );
 }
