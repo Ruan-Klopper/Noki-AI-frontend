@@ -7,7 +7,7 @@ import { CookieManager } from "./cookie-manager";
 const configs: Record<string, ApiConfig> = {
   development: {
     baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
-    timeout: 10000,
+    timeout: 300000,
     retries: 3,
     headers: {
       "Content-Type": "application/json",
@@ -16,7 +16,7 @@ const configs: Record<string, ApiConfig> = {
   production: {
     baseUrl:
       process.env.NEXT_PUBLIC_API_URL || "https://youdidnttest.noki.co.za",
-    timeout: 15000,
+    timeout: 300000,
     retries: 2,
     headers: {
       "Content-Type": "application/json",
@@ -24,7 +24,7 @@ const configs: Record<string, ApiConfig> = {
   },
   test: {
     baseUrl: "http://localhost:3000",
-    timeout: 5000,
+    timeout: 300000,
     retries: 1,
     headers: {
       "Content-Type": "application/json",

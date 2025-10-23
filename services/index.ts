@@ -10,6 +10,7 @@ export { AuthServiceImpl } from "./auth/auth.service";
 export { UserServiceImpl } from "./user/user.service";
 export { ProjectServiceImpl } from "./project/project.service";
 export { TimetableServiceImpl } from "./timetable/timetable.service";
+export { CanvasServiceImpl } from "./canvas/canvas.service";
 
 // Auth components
 export { GoogleAuth } from "./auth/google-auth";
@@ -23,6 +24,7 @@ export {
   getUserService,
   getProjectService,
   getTimetableService,
+  getCanvasService,
 } from "./factory";
 
 export { getHttpClient, createHttpClient } from "./http";

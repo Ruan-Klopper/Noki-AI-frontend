@@ -14,6 +14,18 @@ export class HttpClient implements HttpService {
 
   constructor(config?: Partial<ApiConfig>) {
     this.config = { ...getApiConfig(), ...config };
+
+    // Debug: Log HTTP client configuration
+    if (config && config.timeout && config.timeout > 300000) {
+      console.log(
+        "[HTTP Client] Constructed with extended timeout:",
+        this.config.timeout,
+        "ms (",
+        this.config.timeout / 300000,
+        "minutes), retries:",
+        this.config.retries
+      );
+    }
   }
 
   private async makeRequest<T>(
@@ -30,15 +42,53 @@ export class HttpClient implements HttpService {
       ...options.headers,
     };
 
-    const requestOptions: RequestInit = {
-      ...options,
-      headers: defaultHeaders,
-      signal: AbortSignal.timeout(this.config.timeout),
-    };
-
     const makeRequest = async (): Promise<ApiResponse<T>> => {
-      const response = await fetch(fullUrl, requestOptions);
-      return handleApiResponse(response) as Promise<ApiResponse<T>>;
+      // Create AbortController for timeout (fresh for each attempt)
+      const controller = new AbortController();
+      const timeoutMs = this.config.timeout;
+
+      // Debug log for Canvas endpoints
+      if (fullUrl.includes("/canvas/")) {
+        console.log(
+          `[HTTP Client] Making request to ${fullUrl} with timeout: ${timeoutMs}ms (${
+            timeoutMs / 300000
+          } minutes)`
+        );
+      }
+
+      const timeoutId = setTimeout(() => {
+        console.error(
+          `[HTTP Client] Request to ${fullUrl} timed out after ${timeoutMs}ms`
+        );
+        controller.abort();
+      }, timeoutMs);
+
+      const requestOptions: RequestInit = {
+        ...options,
+        headers: defaultHeaders,
+        signal: controller.signal,
+      };
+
+      try {
+        const response = await fetch(fullUrl, requestOptions);
+        clearTimeout(timeoutId);
+
+        if (fullUrl.includes("/canvas/")) {
+          console.log(
+            `[HTTP Client] Request to ${fullUrl} completed successfully`
+          );
+        }
+
+        return handleApiResponse(response) as Promise<ApiResponse<T>>;
+      } catch (error) {
+        clearTimeout(timeoutId);
+
+        if (fullUrl.includes("/canvas/")) {
+          console.error(`[HTTP Client] Request to ${fullUrl} failed:`, error);
+        }
+
+        throw error;
+      }
     };
 
     return withRetry(makeRequest, this.config.retries);

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Check, Eye, EyeOff } from "lucide-react";
 import { useAuthContext } from "@/services/auth/auth-context";
+import { useCanvas } from "@/services";
 import {
   Button,
   Card,
@@ -41,6 +42,14 @@ export default function SignUpPage() {
     renderGoogleButton,
     showNotification,
   } = useAuthContext();
+  const {
+    setupCanvas,
+    linkCanvasData,
+    isLoading: canvasLoading,
+    error: canvasError,
+    setupResponse,
+    linkResponse,
+  } = useCanvas();
   const [step, setStep] = useState(1);
   const [googleButtonRendered, setGoogleButtonRendered] = useState(false);
 
@@ -174,13 +183,8 @@ export default function SignUpPage() {
   // Step 4: Canvas Setup (previously step 3)
   const [institutionUrl, setInstitutionUrl] = useState("");
   const [accessToken, setAccessToken] = useState("");
-  const [testingConnection, setTestingConnection] = useState(false);
   const [connectionTested, setConnectionTested] = useState(false);
-  const [userProfile, setUserProfile] = useState<{
-    name: string;
-    email: string;
-  } | null>(null);
-  const [syncingData, setSyncingData] = useState(false);
+  const [dataLinked, setDataLinked] = useState(false);
 
   // Step 5: Preferences (previously step 4)
   const [emailReminders, setEmailReminders] = useState(true);
@@ -231,19 +235,17 @@ export default function SignUpPage() {
     }
 
     // Handle Canvas data sync
-    if (step === 4) {
-      // Sync data
-      setSyncingData(true);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setSyncingData(false);
+    if (step === 4 && connectionTested && !dataLinked && !skipLMS) {
+      await handleLinkCanvasData();
+      return; // Wait for linking to complete before proceeding
     }
 
-    // Navigate to next step
+    // Navigate to next step (including when data is already linked)
     if (step < 5) {
       setStep(step + 1);
     } else {
       // Complete setup (no registration needed here anymore)
-      router.push("/dashboard");
+      router.push("/");
     }
   };
 
@@ -311,15 +313,93 @@ export default function SignUpPage() {
   };
 
   const handleTestConnection = async () => {
-    setTestingConnection(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setUserProfile({
-      name: "John Doe",
-      email: "john.doe@university.edu",
-    });
-    setConnectionTested(true);
-    setTestingConnection(false);
+    if (!institutionUrl || !accessToken) {
+      showNotification(
+        "error",
+        "Missing Information",
+        "Please fill in all fields"
+      );
+      return;
+    }
+
+    // Show loading notification
+    showNotification(
+      "info",
+      "Testing Connection",
+      "Connecting to your Canvas account..."
+    );
+
+    try {
+      const result = await setupCanvas({
+        canvas_institutional_url: institutionUrl,
+        canvas_token: accessToken,
+      });
+
+      if (result) {
+        setConnectionTested(true);
+        showNotification(
+          "success",
+          "Canvas Linked Successfully",
+          `Welcome, ${result.user_details.name}! Your Canvas account has been connected.`
+        );
+      } else {
+        showNotification(
+          "error",
+          "Connection Failed",
+          canvasError ||
+            "Failed to connect to Canvas. Please check your credentials."
+        );
+      }
+    } catch (error) {
+      console.error("Canvas setup error:", error);
+      showNotification(
+        "error",
+        "Connection Failed",
+        "Failed to connect to Canvas. Please check your credentials and try again."
+      );
+    }
+  };
+
+  const handleLinkCanvasData = async () => {
+    // Show loading notification with extended warning
+    showNotification(
+      "info",
+      "Syncing Canvas Data - Please Wait",
+      "Importing your courses and assignments from Canvas. This process can take several minutes (up to 15 minutes) depending on how much data you have. Please do not close or refresh this page."
+    );
+
+    try {
+      const result = await linkCanvasData();
+
+      if (result) {
+        setDataLinked(true);
+        showNotification(
+          "success",
+          "Canvas Data Synced Successfully! 🎉",
+          result.message
+        );
+        // Move to next step after successful linking
+        setTimeout(() => {
+          setStep(5);
+        }, 1500);
+      } else {
+        showNotification(
+          "error",
+          "Sync Failed",
+          canvasError ||
+            "Failed to sync Canvas data. This may have been due to a timeout. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Canvas link error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      showNotification(
+        "error",
+        "Sync Failed",
+        `Failed to sync Canvas data: ${errorMessage}. If the operation timed out, please try again - the process can take up to 15 minutes.`
+      );
+    }
   };
 
   return (
@@ -788,15 +868,20 @@ export default function SignUpPage() {
                 {!connectionTested && (
                   <button
                     onClick={handleTestConnection}
-                    disabled={
-                      !institutionUrl || !accessToken || testingConnection
-                    }
+                    disabled={!institutionUrl || !accessToken || canvasLoading}
                     className="w-full px-4 py-3 rounded-lg bg-noki-primary text-white font-roboto font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    {testingConnection ? (
+                    {canvasLoading ? (
                       <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Testing Connection...
+                        <Spin
+                          indicator={
+                            <LoadingOutlined
+                              style={{ fontSize: 20, color: "#ffffff" }}
+                              spin
+                            />
+                          }
+                        />
+                        <span className="ml-2">Testing Connection...</span>
                       </>
                     ) : (
                       "Test Connection"
@@ -804,21 +889,49 @@ export default function SignUpPage() {
                   </button>
                 )}
 
-                {connectionTested && userProfile && (
+                {canvasError && !connectionTested && (
                   <Alert
-                    message="Connection Successful!"
+                    message="Connection Failed"
+                    description={canvasError}
+                    type="error"
+                    icon={<ExclamationCircleOutlined />}
+                    showIcon
+                    closable
+                    className="mt-4"
+                    style={{
+                      backgroundColor: "rgba(239, 68, 68, 0.1)",
+                      borderColor: "rgba(239, 68, 68, 0.3)",
+                      color: "#f8fafc",
+                    }}
+                  />
+                )}
+
+                {connectionTested && setupResponse && !dataLinked && (
+                  <Alert
+                    message="Canvas Account Connected!"
                     description={
-                      <div>
+                      <div className="space-y-2">
                         <p className="mb-1">
-                          Welcome, <strong>{userProfile.name}</strong>
+                          <strong className="text-foreground">Name:</strong>{" "}
+                          {setupResponse.user_details.name}
                         </p>
-                        <p>{userProfile.email}</p>
+                        <p className="mb-1">
+                          <strong className="text-foreground">
+                            Institution:
+                          </strong>{" "}
+                          {institutionUrl}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {canvasLoading
+                            ? "⏳ Syncing your data... This may take up to 15 minutes. Please be patient and do not refresh the page."
+                            : 'Click "Sync Data" below to import your courses and assignments'}
+                        </p>
                       </div>
                     }
                     type="success"
                     icon={<CheckCircleFilled />}
                     showIcon
-                    className="mb-4"
+                    className="mt-4"
                     style={{
                       backgroundColor: "rgba(16, 185, 129, 0.1)",
                       borderColor: "rgba(16, 185, 129, 0.3)",
@@ -827,16 +940,52 @@ export default function SignUpPage() {
                   />
                 )}
 
-                {syncingData && (
+                {canvasLoading && connectionTested && !dataLinked && (
                   <Alert
-                    message="Syncing your data with Noki..."
+                    message="Syncing Canvas Data"
+                    description={
+                      <div className="space-y-2">
+                        <p>
+                          We're importing your courses and assignments from
+                          Canvas. This process can take several minutes
+                          depending on how much data you have.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          ⚠️ Please do not close this window or refresh the
+                          page.
+                        </p>
+                      </div>
+                    }
                     type="info"
                     icon={<LoadingOutlined spin />}
                     showIcon
-                    className="mb-4"
+                    className="mt-4"
                     style={{
                       backgroundColor: "rgba(29, 114, 166, 0.1)",
                       borderColor: "rgba(29, 114, 166, 0.3)",
+                      color: "#f8fafc",
+                    }}
+                  />
+                )}
+
+                {linkResponse && dataLinked && (
+                  <Alert
+                    message="Canvas Data Synced Successfully!"
+                    description={
+                      <div>
+                        <p>{linkResponse.message}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Proceeding to next step...
+                        </p>
+                      </div>
+                    }
+                    type="success"
+                    icon={<CheckCircleFilled />}
+                    showIcon
+                    className="mt-4"
+                    style={{
+                      backgroundColor: "rgba(16, 185, 129, 0.1)",
+                      borderColor: "rgba(16, 185, 129, 0.3)",
                       color: "#f8fafc",
                     }}
                   />
@@ -939,9 +1088,10 @@ export default function SignUpPage() {
           {/* Button group inside the card, fixed to bottom of card */}
           <div className="absolute bottom-0 left-0 right-0 bg-secondary border-t border-border rounded-b-2xl p-4">
             <div className="flex items-center justify-between gap-4">
-              {step > 1 && step <= 2 ? (
+              {step > 1 && step <= 4 ? (
                 <button
                   onClick={handlePrevious}
+                  disabled={canvasLoading}
                   className="px-6 py-2.5 rounded-lg border border-border text-foreground font-roboto font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
@@ -993,10 +1143,28 @@ export default function SignUpPage() {
               ) : step === 4 ? (
                 <button
                   onClick={handleNext}
-                  disabled={!skipLMS && !connectionTested}
-                  className="px-6 py-2.5 rounded-lg bg-noki-primary text-white font-roboto font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={(!skipLMS && !connectionTested) || canvasLoading}
+                  className="px-6 py-2.5 rounded-lg bg-noki-primary text-white font-roboto font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Next
+                  {canvasLoading ? (
+                    <>
+                      <Spin
+                        indicator={
+                          <LoadingOutlined
+                            style={{ fontSize: 16, color: "#ffffff" }}
+                            spin
+                          />
+                        }
+                      />
+                      <span>Syncing Data...</span>
+                    </>
+                  ) : connectionTested && !dataLinked ? (
+                    "Sync Data"
+                  ) : dataLinked ? (
+                    "Continue to Preferences"
+                  ) : (
+                    "Next"
+                  )}
                 </button>
               ) : (
                 <button
@@ -1004,15 +1172,15 @@ export default function SignUpPage() {
                   disabled={
                     isSubmitting ||
                     isLoading ||
-                    syncingData ||
+                    canvasLoading ||
                     (step === 5 && !!error && !success)
                   }
                   className="px-6 py-2.5 rounded-lg bg-noki-primary text-white font-roboto font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {isSubmitting || isLoading || syncingData ? (
+                  {isSubmitting || isLoading || canvasLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      {syncingData ? "Syncing..." : "Loading..."}
+                      {canvasLoading ? "Processing..." : "Loading..."}
                     </>
                   ) : step === 5 ? (
                     "Go to Dashboard"

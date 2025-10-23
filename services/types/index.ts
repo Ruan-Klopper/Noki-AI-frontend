@@ -59,6 +59,7 @@ export interface ServiceFactory {
   createUserService(): UserService;
   createProjectService(): ProjectService;
   createTimetableService(): TimetableService;
+  createCanvasService(): CanvasService;
 }
 
 // Forward declarations for service interfaces
@@ -181,4 +182,42 @@ export interface TimetableEvent {
   isRecurring: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+// Canvas Service Types
+export interface CanvasService extends BaseService {
+  setupCanvas(data: CanvasSetupData): Promise<ApiResponse<CanvasSetupResponse>>;
+  linkCanvasData(): Promise<ApiResponse<CanvasLinkResponse>>;
+}
+
+export interface CanvasSetupData {
+  canvas_institutional_url: string;
+  canvas_token: string;
+}
+
+export interface CanvasUserDetails {
+  id: number;
+  name: string;
+  created_at: string;
+  sortable_name: string;
+  short_name: string;
+  avatar_url: string;
+  last_name: string;
+  first_name: string;
+  locale: string | null;
+  effective_locale: string;
+  permissions: {
+    can_update_name: boolean;
+    can_update_avatar: boolean;
+    limit_parent_app_web_access: boolean;
+  };
+}
+
+export interface CanvasSetupResponse {
+  message: string;
+  user_details: CanvasUserDetails;
+}
+
+export interface CanvasLinkResponse {
+  message: string;
 }
