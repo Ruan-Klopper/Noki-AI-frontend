@@ -11,6 +11,13 @@ export { UserServiceImpl } from "./user/user.service";
 export { ProjectServiceImpl } from "./project/project.service";
 export { TimetableServiceImpl } from "./timetable/timetable.service";
 export { CanvasServiceImpl } from "./canvas/canvas.service";
+export { MainServiceImpl } from "./main/main.service";
+
+// Storage services
+export {
+  IndexedDBService,
+  getIndexedDBService,
+} from "./storage/indexeddb.service";
 
 // Auth components
 export { GoogleAuth } from "./auth/google-auth";
@@ -25,6 +32,7 @@ export {
   getProjectService,
   getTimetableService,
   getCanvasService,
+  getMainService,
 } from "./factory";
 
 export { getHttpClient, createHttpClient } from "./http";

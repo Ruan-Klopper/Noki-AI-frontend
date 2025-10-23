@@ -86,7 +86,7 @@ export default function SignInPage() {
           "Welcome back!",
           "You have been successfully signed in"
         );
-        router.push("/dashboard");
+        router.push("/");
       } else {
         const errorMessage = response.message || "Sign in failed";
         setError(errorMessage);

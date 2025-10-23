@@ -122,9 +122,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   "Welcome back!",
                   "You have been successfully signed in"
                 );
-                console.log("Redirecting to dashboard...");
-                // For signin, redirect to dashboard
-                window.location.href = "/dashboard";
+                console.log("Redirecting to home...");
+                // For signin, redirect to home page
+                window.location.href = "/";
               }
             } else {
               showNotification(

@@ -5,6 +5,7 @@ import {
   ProjectService,
   TimetableService,
   CanvasService,
+  MainService,
 } from "../types";
 import { HttpClient, createHttpClient } from "../http";
 import { AuthServiceImpl } from "../auth/auth.service";
@@ -12,6 +13,7 @@ import { UserServiceImpl } from "../user/user.service";
 import { ProjectServiceImpl } from "../project/project.service";
 import { TimetableServiceImpl } from "../timetable/timetable.service";
 import { CanvasServiceImpl } from "../canvas/canvas.service";
+import { MainServiceImpl } from "../main/main.service";
 
 // Service Factory implementation following Dependency Inversion Principle
 export class ServiceFactoryImpl implements ServiceFactory {
@@ -41,6 +43,12 @@ export class ServiceFactoryImpl implements ServiceFactory {
     // Canvas service creates its own HTTP client with extended timeout
     // Do NOT pass the factory's httpClient
     return new CanvasServiceImpl();
+  }
+
+  createMainService(): MainService {
+    // Main service creates its own HTTP client with extended timeout (5 minutes)
+    // Do NOT pass the factory's httpClient
+    return new MainServiceImpl();
   }
 }
 
@@ -80,4 +88,8 @@ export const getTimetableService = (): TimetableService => {
 
 export const getCanvasService = (): CanvasService => {
   return getServiceFactory().createCanvasService();
+};
+
+export const getMainService = (): MainService => {
+  return getServiceFactory().createMainService();
 };

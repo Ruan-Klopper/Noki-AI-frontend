@@ -60,6 +60,7 @@ export interface ServiceFactory {
   createProjectService(): ProjectService;
   createTimetableService(): TimetableService;
   createCanvasService(): CanvasService;
+  createMainService(): MainService;
 }
 
 // Forward declarations for service interfaces
@@ -220,4 +221,27 @@ export interface CanvasSetupResponse {
 
 export interface CanvasLinkResponse {
   message: string;
+}
+
+// Main Service Types
+export interface MainService extends BaseService {
+  getAllUserData(): Promise<ApiResponse<AllUserData>>;
+  getCachedData(): Promise<CachedData | null>;
+  clearCachedData(): Promise<void>;
+  getCacheAge(): Promise<number | null>;
+  getDB(): any; // Returns IndexedDB service for direct CRUD operations
+}
+
+// All User Data - contains projects, tasks, and todos
+export interface AllUserData {
+  projects?: any[];
+  tasks?: any[];
+  todos?: any[];
+  [key: string]: any; // Allow for additional fields
+}
+
+// Cached Data with timestamp
+export interface CachedData {
+  data: AllUserData;
+  lastUpdated: string; // ISO 8601 datetime string
 }
