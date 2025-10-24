@@ -15,6 +15,13 @@ import {
 import { Select, TimePicker } from "antd";
 import dayjs from "dayjs";
 import { ManageProjectsModal } from "@/components/global/manage-projects-modal";
+import { useMain } from "@/services/hooks/useMain";
+import {
+  utcToLocalDateString,
+  utcToLocalTimeString,
+  dateToLocalDateString,
+  addHoursToTime as addHours,
+} from "@/lib/timezone-config";
 
 export default function TimetablePage() {
   const [currentView, setCurrentView] = useState<"month" | "week" | "day">(
@@ -33,6 +40,13 @@ export default function TimetablePage() {
   const [endHour, setEndHour] = useState(2); // Default: 2:00 AM (next day)
   const [timeRangePreset, setTimeRangePreset] = useState("extended");
 
+  // Data from IndexedDB
+  const { getDB } = useMain();
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [todos, setTodos] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -40,6 +54,185 @@ export default function TimetablePage() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Fetch data from IndexedDB
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const db = getDB();
+        await db.init();
+
+        console.log("[Timetable] Fetching data from IndexedDB...");
+
+        // Fetch all tasks, todos, and projects
+        const [fetchedTasks, fetchedTodos, fetchedProjects] = await Promise.all(
+          [db.getTasks(), db.getTodos(), db.getProjects()]
+        );
+
+        console.log("[Timetable] Fetched data:", {
+          tasks: fetchedTasks.length,
+          todos: fetchedTodos.length,
+          projects: fetchedProjects.length,
+        });
+
+        // Transform data to match timetable format
+        const formattedTasks = fetchedTasks.map((task: any) => {
+          // Find the project for this task to get color and details
+          const project = fetchedProjects.find(
+            (p: any) => p.id === task.project_id
+          );
+
+          // Determine color - use color_hex if available, otherwise fallback to color
+          const projectColor = project?.color_hex || project?.color;
+          const colorClass = projectColor?.startsWith("#")
+            ? `bg-[${projectColor}]`
+            : projectColor || "bg-noki-primary";
+
+          // Get project title and course code
+          const projectTitle = project?.title || project?.name || "General";
+          const courseCode =
+            project?.source === "Canvas" ? project?.course_code : null;
+
+          // Build the subject display (shows project name or title with optional course code)
+          const subjectDisplay = courseCode ? `${courseCode}` : projectTitle;
+
+          // Determine if all-day and extract time from due_date if needed
+          const isAllDay =
+            task.is_all_day === true || task.is_all_day === "true";
+          let startTime = task.start_time;
+          let endTime = task.end_time;
+
+          // If not all-day and no explicit times, extract from due_date
+          if (!isAllDay && !startTime && (task.due_date || task.dueDate)) {
+            const dueDate = task.due_date || task.dueDate;
+            startTime = utcToLocalTimeString(dueDate);
+            endTime = endTime || addHours(startTime, 1); // Default 1 hour duration
+          }
+
+          return {
+            id: task.id,
+            title: task.title || task.name || "Untitled Task",
+            subject: subjectDisplay,
+            projectTitle: projectTitle, // Full project title for reference
+            courseCode: courseCode,
+            type: "task" as const,
+            dueDate: task.due_date || task.dueDate,
+            allDay: isAllDay,
+            startTime: startTime,
+            endTime: endTime,
+            color: colorClass,
+            colorHex: project?.color_hex || null,
+            borderColor: project?.color_hex
+              ? `border-[${project.color_hex}]`
+              : `border-${colorClass.replace("bg-", "")}`,
+            textColor: project?.color_hex
+              ? `text-[${project.color_hex}]`
+              : `text-${colorClass.replace("bg-", "")}`,
+            status: task.is_submitted
+              ? "Completed"
+              : task.status || "Not Started",
+            priority: task.priority,
+            source: project?.source || "manual",
+          };
+        });
+
+        const formattedTodos = fetchedTodos.map((todo: any) => {
+          // Find task and project for color and details
+          const task = fetchedTasks.find((t: any) => t.id === todo.task_id);
+          const project = task
+            ? fetchedProjects.find((p: any) => p.id === task.project_id)
+            : null;
+
+          // Determine color - use color_hex if available
+          const projectColor = project?.color_hex || project?.color;
+          const colorClass = projectColor?.startsWith("#")
+            ? `bg-[${projectColor}]`
+            : projectColor || "bg-noki-secondary";
+
+          // Get project title and course code
+          const projectTitle = project?.title || project?.name || "General";
+          const courseCode =
+            project?.source === "Canvas" ? project?.course_code : null;
+
+          // Build the subject display
+          const subjectDisplay = courseCode ? `${courseCode}` : projectTitle;
+
+          // Determine if all-day and extract time from due_date if needed
+          const isAllDay =
+            todo.is_all_day === true || todo.is_all_day === "true";
+          let startTime = todo.start_time;
+          let endTime = todo.end_time;
+
+          // If not all-day and no explicit times, extract from due_date
+          if (!isAllDay && !startTime && (todo.due_date || todo.dueDate)) {
+            const dueDate = todo.due_date || todo.dueDate;
+            startTime = utcToLocalTimeString(dueDate);
+            endTime = endTime || addHours(startTime, 1); // Default 1 hour duration
+          }
+
+          return {
+            id: todo.id,
+            title: todo.title || todo.name || "Untitled Todo",
+            subject: subjectDisplay,
+            projectTitle: projectTitle,
+            courseCode: courseCode,
+            type: "todo" as const,
+            dueDate: todo.due_date || todo.dueDate,
+            allDay: isAllDay,
+            startTime: startTime,
+            endTime: endTime,
+            color: colorClass,
+            colorHex: project?.color_hex || null,
+            borderColor: project?.color_hex
+              ? `border-[${project.color_hex}]`
+              : `border-${colorClass.replace("bg-", "")}`,
+            textColor: project?.color_hex
+              ? `text-[${project.color_hex}]`
+              : `text-${colorClass.replace("bg-", "")}`,
+            priority: todo.priority,
+            source: project?.source || "manual",
+          };
+        });
+
+        setTasks(formattedTasks);
+        setTodos(formattedTodos);
+        setProjects(fetchedProjects);
+
+        console.log("[Timetable] Data loaded successfully (Timezone: UTC+2)");
+        console.log("[Timetable] Formatted data sample:");
+        if (formattedTasks.length > 0) {
+          console.log("[Timetable] Sample formatted task:", formattedTasks[0]);
+          console.log("[Timetable] Tasks with times:", {
+            allDayTasks: formattedTasks.filter((t: any) => t.allDay).length,
+            timedTasks: formattedTasks.filter((t: any) => !t.allDay).length,
+            sampleTimedTask: formattedTasks.find(
+              (t: any) => !t.allDay && t.startTime
+            ),
+          });
+        }
+        if (formattedTodos.length > 0) {
+          console.log("[Timetable] Todos with times:", {
+            allDayTodos: formattedTodos.filter((t: any) => t.allDay).length,
+            timedTodos: formattedTodos.filter((t: any) => !t.allDay).length,
+            sampleTimedTodo: formattedTodos.find(
+              (t: any) => !t.allDay && t.startTime
+            ),
+          });
+        }
+        if (formattedTodos.length > 0) {
+          console.log("[Timetable] Sample formatted todo:", formattedTodos[0]);
+        }
+      } catch (error) {
+        console.error("[Timetable] Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   const generateTimeSlots = (start: number, end: number): string[] => {
     const slots: string[] = [];
@@ -76,92 +269,8 @@ export default function TimetablePage() {
     }
   };
 
-  const events = [
-    {
-      id: "1",
-      title: "Interactive Development 300",
-      code: "DV300",
-      startTime: "09:00",
-      endTime: "11:00",
-      location: "Lab A",
-      instructor: "Prof. Smith",
-      color: "bg-noki-primary",
-      borderColor: "border-noki-primary",
-      textColor: "text-noki-primary",
-      day: "Monday",
-      type: "event" as const,
-    },
-    {
-      id: "2",
-      title: "Photography 300",
-      code: "PH300",
-      startTime: "13:00",
-      endTime: "15:00",
-      location: "Studio B",
-      instructor: "Prof. Johnson",
-      color: "bg-noki-tertiary",
-      borderColor: "border-noki-tertiary",
-      textColor: "text-noki-tertiary",
-      day: "Monday",
-      type: "event" as const,
-    },
-    {
-      id: "3",
-      title: "Visual Culture 300",
-      code: "VC300",
-      startTime: "10:00",
-      endTime: "12:00",
-      location: "Room 201",
-      instructor: "Dr. Williams",
-      color: "bg-orange-400",
-      borderColor: "border-orange-400",
-      textColor: "text-orange-400",
-      day: "Tuesday",
-      type: "event" as const,
-    },
-    {
-      id: "4",
-      title: "Experimental Learning 300",
-      code: "PH300",
-      startTime: "14:00",
-      endTime: "16:00",
-      location: "Workshop",
-      instructor: "Prof. Brown",
-      color: "bg-noki-tertiary",
-      borderColor: "border-noki-tertiary",
-      textColor: "text-noki-tertiary",
-      day: "Wednesday",
-      type: "event" as const,
-    },
-    {
-      id: "5",
-      title: "Study Group",
-      code: "Personal",
-      startTime: "09:00",
-      endTime: "10:30",
-      location: "Library",
-      instructor: "Study Session",
-      color: "bg-purple-400",
-      borderColor: "border-purple-400",
-      textColor: "text-purple-400",
-      day: "Monday",
-      type: "event" as const,
-    },
-    {
-      id: "6",
-      title: "Team Meeting",
-      code: "Personal",
-      startTime: "10:00",
-      endTime: "11:00",
-      location: "Room 105",
-      instructor: "Group Work",
-      color: "bg-purple-400",
-      borderColor: "border-purple-400",
-      textColor: "text-purple-400",
-      day: "Tuesday",
-      type: "event" as const,
-    },
-  ];
+  // Keep events as empty for now - can be integrated with timetable events later
+  const events: any[] = [];
 
   const getDateString = (daysOffset: number) => {
     const date = new Date();
@@ -169,269 +278,25 @@ export default function TimetablePage() {
     return date.toISOString().split("T")[0];
   };
 
-  const todos = [
-    {
-      id: "todo1",
-      title: "Review lecture notes",
-      subject: "DV300",
-      type: "todo" as const,
-      dueDate: getDateString(0),
-      allDay: true,
-      color: "bg-noki-primary",
-      borderColor: "border-noki-primary",
-      textColor: "text-noki-primary",
-    },
-    {
-      id: "todo2",
-      title: "Buy camera equipment",
-      subject: "PH300",
-      type: "todo" as const,
-      dueDate: getDateString(1),
-      allDay: false,
-      startTime: "11:00",
-      endTime: "12:00",
-      color: "bg-noki-tertiary",
-      borderColor: "border-noki-tertiary",
-      textColor: "text-noki-tertiary",
-    },
-    {
-      id: "todo3",
-      title: "Read chapter 5",
-      subject: "VC300",
-      type: "todo" as const,
-      dueDate: getDateString(2),
-      allDay: true,
-      color: "bg-orange-400",
-      borderColor: "border-orange-400",
-      textColor: "text-orange-400",
-    },
-    {
-      id: "todo4",
-      title: "Team meeting prep",
-      subject: "Personal",
-      type: "todo" as const,
-      dueDate: getDateString(3),
-      allDay: false,
-      startTime: "16:00",
-      endTime: "17:00",
-      color: "bg-purple-400",
-      borderColor: "border-purple-400",
-      textColor: "text-purple-400",
-    },
-    {
-      id: "todo5",
-      title: "Update portfolio website",
-      subject: "Personal",
-      type: "todo" as const,
-      dueDate: getDateString(0),
-      allDay: false,
-      startTime: "14:00",
-      endTime: "15:00",
-      color: "bg-purple-400",
-      borderColor: "border-purple-400",
-      textColor: "text-purple-400",
-    },
-    {
-      id: "todo6",
-      title: "Practice photography techniques",
-      subject: "PH300",
-      type: "todo" as const,
-      dueDate: getDateString(4),
-      allDay: true,
-      color: "bg-noki-tertiary",
-      borderColor: "border-noki-tertiary",
-      textColor: "text-noki-tertiary",
-    },
-    {
-      id: "todo7",
-      title: "Email professor",
-      subject: "DV300",
-      type: "todo" as const,
-      dueDate: getDateString(0),
-      allDay: false,
-      startTime: "10:00",
-      endTime: "10:30",
-      color: "bg-noki-primary",
-      borderColor: "border-noki-primary",
-      textColor: "text-noki-primary",
-    },
-  ];
+  // Tasks and todos are now loaded from IndexedDB - see state at top of component
 
-  const tasks = [
-    {
-      id: "t1",
-      title: "40 images for commercial portfolio",
-      subject: "PH300",
-      type: "task" as const,
-      dueDate: getDateString(0),
-      allDay: true,
-      color: "bg-noki-tertiary",
-      borderColor: "border-noki-tertiary",
-      textColor: "text-noki-tertiary",
-      status: "Not Started",
-    },
-    {
-      id: "t2",
-      title: "Start planning mobile app",
-      subject: "DV300",
-      type: "task" as const,
-      dueDate: getDateString(1),
-      allDay: false,
-      startTime: "15:00",
-      endTime: "17:00",
-      color: "bg-noki-primary",
-      borderColor: "border-noki-primary",
-      textColor: "text-noki-primary",
-      status: "In Progress",
-    },
-    {
-      id: "t3",
-      title: "Research Methods Essay",
-      subject: "VC300",
-      type: "task" as const,
-      dueDate: getDateString(5),
-      allDay: true,
-      color: "bg-orange-400",
-      borderColor: "border-orange-400",
-      textColor: "text-orange-400",
-      status: "Not Started",
-    },
-    {
-      id: "t4",
-      title: "Weekly Project Review",
-      subject: "Personal",
-      type: "task" as const,
-      dueDate: getDateString(2),
-      allDay: true,
-      color: "bg-purple-400",
-      borderColor: "border-purple-400",
-      textColor: "text-purple-400",
-      status: "Completed",
-    },
-    {
-      id: "t5",
-      title: "Portfolio Presentation",
-      subject: "PH300",
-      type: "task" as const,
-      dueDate: getDateString(6),
-      allDay: false,
-      startTime: "14:00",
-      endTime: "15:00",
-      color: "bg-noki-tertiary",
-      borderColor: "border-noki-tertiary",
-      textColor: "text-noki-tertiary",
-      status: "Not Started",
-    },
-    {
-      id: "t6",
-      title: "Code review session",
-      subject: "DV300",
-      type: "task" as const,
-      dueDate: getDateString(0),
-      allDay: false,
-      startTime: "09:30",
-      endTime: "10:30",
-      color: "bg-noki-primary",
-      borderColor: "border-noki-primary",
-      textColor: "text-noki-primary",
-      status: "Not Started",
-    },
-    {
-      id: "t7",
-      title: "Edit photo series",
-      subject: "PH300",
-      type: "task" as const,
-      dueDate: getDateString(3),
-      allDay: false,
-      startTime: "09:00",
-      endTime: "11:00",
-      color: "bg-noki-tertiary",
-      borderColor: "border-noki-tertiary",
-      textColor: "text-noki-tertiary",
-      status: "In Progress",
-    },
-    {
-      id: "t8",
-      title: "Database design document",
-      subject: "DV300",
-      type: "task" as const,
-      dueDate: getDateString(4),
-      allDay: true,
-      color: "bg-noki-primary",
-      borderColor: "border-noki-primary",
-      textColor: "text-noki-primary",
-      status: "Not Started",
-    },
-    {
-      id: "t9",
-      title: "UI mockups",
-      subject: "DV300",
-      type: "task" as const,
-      dueDate: getDateString(0),
-      allDay: false,
-      startTime: "10:15",
-      endTime: "11:30",
-      color: "bg-noki-primary",
-      borderColor: "border-noki-primary",
-      textColor: "text-noki-primary",
-      status: "In Progress",
-    },
-  ];
+  // Generate assignments from tasks (for the assignments view if needed)
+  const assignments = tasks.map((task) => ({
+    id: task.id,
+    title: task.title,
+    subject: task.subject,
+    subjectName: task.subject,
+    type: "Assignment",
+    dueDate: task.dueDate,
+    status: task.status,
+    color: task.color,
+  }));
 
-  const assignments = [
-    {
-      id: "1",
-      title: "40 images for commercial portfolio",
-      subject: "PH300",
-      subjectName: "Photography 300",
-      type: "Assignment",
-      dueDate: "2024-09-21",
-      status: "Not Started",
-      color: "bg-noki-tertiary",
-    },
-    {
-      id: "2",
-      title: "Start your planning and outlining of your mobile app",
-      subject: "DV300",
-      subjectName: "Interactive Development 300",
-      type: "Assignment",
-      dueDate: "2024-09-21",
-      status: "In Progress",
-      color: "bg-noki-primary",
-    },
-    {
-      id: "3",
-      title: "Research Methods Essay",
-      subject: "VC300",
-      subjectName: "Visual Culture 300",
-      type: "Assignment",
-      dueDate: "2024-09-25",
-      status: "Not Started",
-      color: "bg-orange-400",
-    },
-    {
-      id: "4",
-      title: "Weekly Project Review",
-      subject: "Personal",
-      subjectName: "Personal Task",
-      type: "Personal",
-      dueDate: "2024-09-23",
-      status: "Completed",
-      color: "bg-gray-400",
-    },
-    {
-      id: "5",
-      title: "Portfolio Presentation",
-      subject: "PH300",
-      subjectName: "Photography 300",
-      type: "Event",
-      dueDate: "2024-09-28",
-      status: "Not Started",
-      color: "bg-noki-tertiary",
-    },
+  // Generate subjects dynamically from projects
+  const subjects = [
+    "All Subjects",
+    ...Array.from(new Set(projects.map((p) => p.name))),
   ];
-
-  const subjects = ["All Subjects", "DV300", "PH300", "VC300", "Personal"];
   const types = ["All Types", "Personal", "Assignment", "Event"];
   const dateFilters = ["All Dates", "This Week", "Next Week", "This Month"];
 
@@ -648,9 +513,42 @@ export default function TimetablePage() {
   };
 
   const getTasksAndTodosForDate = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    const dateTasks = tasks.filter((task) => task.dueDate === dateStr);
-    const dateTodos = todos.filter((todo) => todo.dueDate === dateStr);
+    // Get local date string from the calendar date
+    const dateStr = dateToLocalDateString(date);
+
+    // Compare date parts after converting UTC dates to local timezone
+    const dateTasks = tasks.filter((task) => {
+      if (!task.dueDate) return false;
+      const taskLocalDate = utcToLocalDateString(task.dueDate);
+      return taskLocalDate === dateStr;
+    });
+
+    const dateTodos = todos.filter((todo) => {
+      if (!todo.dueDate) return false;
+      const todoLocalDate = utcToLocalDateString(todo.dueDate);
+      return todoLocalDate === dateStr;
+    });
+
+    console.log("[Timetable Filter] Date:", dateStr, {
+      totalTasks: tasks.length,
+      totalTodos: todos.length,
+      matchedTasks: dateTasks.length,
+      matchedTodos: dateTodos.length,
+    });
+
+    // Log some task dates for comparison
+    if (tasks.length > 0 && dateTasks.length === 0) {
+      console.log(
+        "[Timetable Filter] Sample task dates (UTC+2):",
+        tasks.slice(0, 3).map((t) => {
+          if (!t.dueDate) return null;
+          return `${utcToLocalDateString(t.dueDate)} ${utcToLocalTimeString(
+            t.dueDate
+          )}`;
+        })
+      );
+    }
+
     return [...dateTasks, ...dateTodos];
   };
 
@@ -740,7 +638,11 @@ export default function TimetablePage() {
                 return (
                   <div
                     key={item.id}
-                    className={`border-2 ${item.borderColor} ${item.textColor} bg-transparent text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded-md flex items-center gap-1 truncate font-medium`}
+                    className="border-2 bg-transparent text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded-md flex items-center gap-1 truncate font-medium"
+                    style={{
+                      borderColor: item.colorHex || undefined,
+                      color: item.colorHex || undefined,
+                    }}
                   >
                     {getTypeIcon(item.type)}
                     <span className="truncate">{item.title}</span>
@@ -750,7 +652,13 @@ export default function TimetablePage() {
                 return (
                   <div
                     key={item.id}
-                    className={`border-2 ${item.borderColor} ${item.color} bg-opacity-30 ${item.textColor} text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded-md flex items-center gap-1 truncate font-medium`}
+                    className="border-2 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded-md flex items-center gap-1 truncate font-medium"
+                    style={{
+                      borderColor: item.colorHex || undefined,
+                      backgroundColor: item.colorHex
+                        ? `${item.colorHex}50`
+                        : undefined,
+                    }}
                   >
                     {getTypeIcon(item.type)}
                     <span className="truncate">{item.title}</span>
@@ -864,9 +772,21 @@ export default function TimetablePage() {
                           <span
                             className={`${
                               item.type === "todo"
-                                ? `border ${item.borderColor} ${item.textColor} bg-transparent`
-                                : `${item.color} bg-opacity-30 ${item.textColor}`
+                                ? "border bg-transparent"
+                                : "text-white"
                             } text-xs px-2 py-0.5 rounded-full font-medium`}
+                            style={{
+                              ...(item.type === "todo"
+                                ? {
+                                    borderColor: item.colorHex || undefined,
+                                    color: item.colorHex || undefined,
+                                  }
+                                : {
+                                    backgroundColor: item.colorHex
+                                      ? `${item.colorHex}50`
+                                      : undefined,
+                                  }),
+                            }}
                           >
                             {item.subject}
                           </span>
@@ -973,20 +893,40 @@ export default function TimetablePage() {
                         return (
                           <div
                             key={item.id}
-                            className={`border-2 ${item.borderColor} ${item.textColor} bg-transparent text-[10px] px-2 py-1 rounded-md flex items-center gap-1 font-medium`}
+                            className="border-2 bg-transparent text-[10px] px-2 py-1 rounded-md flex items-center gap-1 font-medium"
+                            style={{
+                              borderColor: item.colorHex || undefined,
+                              color: item.colorHex || undefined,
+                            }}
                           >
                             {getTypeIcon(item.type)}
-                            <span className="truncate">{item.title}</span>
+                            <span
+                              className="truncate"
+                              title={item.projectTitle}
+                            >
+                              {item.subject}: {item.title}
+                            </span>
                           </div>
                         );
                       } else {
                         return (
                           <div
                             key={item.id}
-                            className={`border-2 ${item.borderColor} ${item.color} bg-opacity-30 text-white text-[10px] px-2 py-1 rounded-md flex items-center gap-1`}
+                            className="border-2 bg-opacity-30 text-white text-[10px] px-2 py-1 rounded-md flex items-center gap-1"
+                            style={{
+                              borderColor: item.colorHex || undefined,
+                              backgroundColor: item.colorHex
+                                ? `${item.colorHex}50`
+                                : undefined,
+                            }}
                           >
                             {getTypeIcon(item.type)}
-                            <span className="truncate">{item.title}</span>
+                            <span
+                              className="truncate"
+                              title={item.projectTitle}
+                            >
+                              {item.subject}: {item.title}
+                            </span>
                           </div>
                         );
                       }
@@ -1099,7 +1039,11 @@ export default function TimetablePage() {
                                 <div className="flex items-center gap-2">
                                   {getTypeIcon(item.type)}
                                   <span
-                                    className={`${item.color} text-white text-xs px-2 py-1 rounded-full font-medium`}
+                                    className="text-white text-xs px-2 py-1 rounded-full font-medium"
+                                    style={{
+                                      backgroundColor:
+                                        item.colorHex || undefined,
+                                    }}
                                   >
                                     {item.code}
                                   </span>
@@ -1147,9 +1091,7 @@ export default function TimetablePage() {
                           key={item.id}
                           onMouseEnter={() => setHoveredItem(item.id)}
                           onMouseLeave={() => setHoveredItem(null)}
-                          className={`border-2 ${item.borderColor} ${
-                            item.textColor
-                          } bg-card p-3 rounded-lg shadow-md absolute font-medium overflow-hidden cursor-pointer hover:shadow-xl transition-shadow ${
+                          className={`border-2 bg-card p-3 rounded-lg shadow-md absolute font-medium overflow-hidden cursor-pointer hover:shadow-xl transition-shadow ${
                             hoveredItem === item.id ? "z-[100]" : "z-10"
                           }`}
                           style={{
@@ -1157,6 +1099,8 @@ export default function TimetablePage() {
                             height: `${position.height}px`,
                             left: `${leftPercent}%`,
                             width: `${widthPercent - 1}%`,
+                            borderColor: item.colorHex || undefined,
+                            color: item.colorHex || undefined,
                           }}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1">
@@ -1184,7 +1128,11 @@ export default function TimetablePage() {
                                 <div className="flex items-center gap-2">
                                   {getTypeIcon(item.type)}
                                   <span
-                                    className={`border-2 ${item.borderColor} ${item.textColor} bg-transparent text-xs px-2 py-1 rounded-full font-medium`}
+                                    className="border-2 bg-transparent text-xs px-2 py-1 rounded-full font-medium"
+                                    style={{
+                                      borderColor: item.colorHex || undefined,
+                                      color: item.colorHex || undefined,
+                                    }}
                                   >
                                     {item.subject}
                                   </span>
@@ -1214,9 +1162,7 @@ export default function TimetablePage() {
                           key={item.id}
                           onMouseEnter={() => setHoveredItem(item.id)}
                           onMouseLeave={() => setHoveredItem(null)}
-                          className={`border-2 ${item.borderColor} ${
-                            item.color
-                          } bg-opacity-30 text-white p-3 rounded-lg shadow-md absolute z-10 overflow-hidden cursor-pointer hover:shadow-xl transition-shadow ${
+                          className={`border-2 text-white p-3 rounded-lg shadow-md absolute z-10 overflow-hidden cursor-pointer hover:shadow-xl transition-shadow ${
                             hoveredItem === item.id ? "z-[100]" : "z-10"
                           }`}
                           style={{
@@ -1224,6 +1170,10 @@ export default function TimetablePage() {
                             height: `${position.height}px`,
                             left: `${leftPercent}%`,
                             width: `${widthPercent - 1}%`,
+                            borderColor: item.colorHex || undefined,
+                            backgroundColor: item.colorHex
+                              ? `${item.colorHex}50`
+                              : undefined,
                           }}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1">
@@ -1251,7 +1201,12 @@ export default function TimetablePage() {
                                 <div className="flex items-center gap-2">
                                   {getTypeIcon(item.type)}
                                   <span
-                                    className={`${item.color} bg-opacity-30 text-white text-xs px-2 py-1 rounded-full font-medium`}
+                                    className="text-white text-xs px-2 py-1 rounded-full font-medium"
+                                    style={{
+                                      backgroundColor: item.colorHex
+                                        ? `${item.colorHex}50`
+                                        : undefined,
+                                    }}
                                   >
                                     {item.subject}
                                   </span>
@@ -1344,7 +1299,11 @@ export default function TimetablePage() {
                       return (
                         <div
                           key={item.id}
-                          className={`border-2 py-2 px-2 ${item.borderColor} ${item.textColor} bg-card p-3 rounded-lg shadow-sm flex gap-2 font-medium items-center`}
+                          className="border-2 py-2 px-2 bg-card p-3 rounded-lg shadow-sm flex gap-2 font-medium items-center"
+                          style={{
+                            borderColor: item.colorHex || undefined,
+                            color: item.colorHex || undefined,
+                          }}
                         >
                           {getTypeIcon(item.type)}
                           <div className="flex-1 min-w-0">
@@ -1361,7 +1320,13 @@ export default function TimetablePage() {
                       return (
                         <div
                           key={item.id}
-                          className={`border-2 ${item.borderColor} ${item.color} bg-opacity-30 text-white p-3 rounded-lg shadow-sm flex gap-2 items-center`}
+                          className="border-2 text-white p-3 rounded-lg shadow-sm flex gap-2 items-center"
+                          style={{
+                            borderColor: item.colorHex || undefined,
+                            backgroundColor: item.colorHex
+                              ? `${item.colorHex}50`
+                              : undefined,
+                          }}
                         >
                           {getTypeIcon(item.type)}
                           <div className="flex-1 min-w-0">
@@ -1420,12 +1385,13 @@ export default function TimetablePage() {
                     return (
                       <div
                         key={item.id}
-                        className={`${item.color} text-white p-3 rounded-lg shadow-lg absolute z-10 border-2 border-white/20 overflow-hidden`}
+                        className="text-white p-3 rounded-lg shadow-lg absolute z-10 border-2 border-white/20 overflow-hidden"
                         style={{
                           top: `${position.top}px`,
                           height: `${position.height}px`,
                           left: `${leftPercent}%`,
                           width: `${widthPercent - 1}%`,
+                          backgroundColor: item.colorHex || undefined,
                         }}
                       >
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -1452,12 +1418,14 @@ export default function TimetablePage() {
                     return (
                       <div
                         key={item.id}
-                        className={`border-2 px-2 py-2 ${item.borderColor} ${item.textColor} bg-card p-3 rounded-lg shadow-lg absolute z-10 font-medium overflow-hidden`}
+                        className="border-2 px-2 py-2 bg-card p-3 rounded-lg shadow-lg absolute z-10 font-medium overflow-hidden"
                         style={{
                           top: `${position.top}px`,
                           height: `${position.height}px`,
                           left: `${leftPercent}%`,
                           width: `${widthPercent - 1}%`,
+                          borderColor: item.colorHex || undefined,
+                          color: item.colorHex || undefined,
                         }}
                       >
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -1480,12 +1448,16 @@ export default function TimetablePage() {
                     return (
                       <div
                         key={item.id}
-                        className={`border-2 px-2 py-2 ${item.borderColor} ${item.color} bg-opacity-30 text-white p-3 rounded-lg shadow-lg absolute z-10 overflow-hidden`}
+                        className="border-2 px-2 py-2 text-white p-3 rounded-lg shadow-lg absolute z-10 overflow-hidden"
                         style={{
                           top: `${position.top}px`,
                           height: `${position.height}px`,
                           left: `${leftPercent}%`,
                           width: `${widthPercent - 1}%`,
+                          borderColor: item.colorHex || undefined,
+                          backgroundColor: item.colorHex
+                            ? `${item.colorHex}50`
+                            : undefined,
                         }}
                       >
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -1538,9 +1510,19 @@ export default function TimetablePage() {
                     <span
                       className={`${
                         item.type === "todo"
-                          ? `border-2 ${item.borderColor} ${item.textColor} bg-transparent`
-                          : `${item.color} text-white`
+                          ? "border-2 bg-transparent"
+                          : "text-white"
                       } text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1`}
+                      style={{
+                        ...(item.type === "todo"
+                          ? {
+                              borderColor: item.colorHex || undefined,
+                              color: item.colorHex || undefined,
+                            }
+                          : {
+                              backgroundColor: item.colorHex || undefined,
+                            }),
+                      }}
                     >
                       {getTypeIcon(item.type)}
                       {item.subject}
@@ -1561,7 +1543,10 @@ export default function TimetablePage() {
                 >
                   <div className="space-y-2">
                     <span
-                      className={`${event.color} text-white text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1`}
+                      className="text-white text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1"
+                      style={{
+                        backgroundColor: event.colorHex || undefined,
+                      }}
                     >
                       {getTypeIcon(event.type)}
                       {event.code}
@@ -1587,6 +1572,57 @@ export default function TimetablePage() {
       </div>
     );
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-noki-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading timetable data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state when no data
+  const hasData = tasks.length > 0 || todos.length > 0;
+
+  console.log("[Timetable Render] Current state:", {
+    isLoading,
+    hasData,
+    tasksLength: tasks.length,
+    todosLength: todos.length,
+  });
+
+  if (!hasData && !isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px]">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="text-6xl mb-4">📅</div>
+          <h3 className="text-xl font-semibold text-foreground">
+            No Tasks or Todos Yet
+          </h3>
+          <p className="text-muted-foreground">
+            Your timetable is empty. Add some tasks and todos to see them here!
+          </p>
+          <button
+            onClick={() => setIsManageModalOpen(true)}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-noki-primary hover:bg-noki-primary/90 text-white rounded-lg font-medium transition-colors shadow-lg shadow-noki-primary/20"
+          >
+            <Plus size={18} />
+            Add Your First Task
+          </button>
+          <div className="mt-6 text-sm text-muted-foreground">
+            <p>
+              💡 <strong>Tip:</strong> Tasks with dates and times will appear in
+              the calendar views
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-4 sm:gap-6">
