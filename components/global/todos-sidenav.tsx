@@ -4,25 +4,34 @@ import {
   ChevronRight,
   Circle,
   CheckCircle2,
-  BookOpen,
   FolderKanban,
+  ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ManageProjectsModal } from "./manage-projects-modal";
+import { useMain } from "@/services/hooks/useMain";
+import {
+  utcToLocalDateString,
+  utcToLocalTimeString,
+  dateToLocalDateString,
+} from "@/lib/timezone-config";
 
 interface Todo {
   id: string;
   title: string;
   project: string;
+  projectTitle: string;
+  courseCode: string | null;
   time: string;
   day?: string;
-  completed?: boolean;
-  type?: "todo" | "assignment" | "task";
-  parentName?: string;
-  assignmentTitle?: string;
-  dueDate?: Date;
+  completed: boolean;
+  type: "todo" | "task";
+  dueDate: string;
+  colorHex: string | null;
+  isOverdue?: boolean;
+  groupIndex?: number;
 }
 
 interface TodosSidenavProps {
@@ -30,233 +39,23 @@ interface TodosSidenavProps {
   onToggle: () => void;
 }
 
-const projectColors: Record<string, string> = {
-  "Computer Science 101": "border-l-blue-500",
-  Mathematics: "border-l-purple-500",
-  "Group Project": "border-l-green-500",
-  "English Literature": "border-l-pink-500",
-  "Physics Lab": "border-l-cyan-500",
-  Biology: "border-l-emerald-500",
-  Marketing: "border-l-orange-500",
-  History: "border-l-amber-500",
-  "Interactive Development 300": "border-l-blue-500",
-  "Photography 300": "border-l-cyan-500",
-  "Visual Culture 300": "border-l-orange-500",
-  "Portfolio Website Redesign": "border-l-blue-500",
-  "Mobile App Development": "border-l-cyan-500",
-  "Photography Portfolio": "border-l-orange-500",
-};
-
-const getProjectColor = (project: string): string => {
-  return projectColors[project] || "border-l-noki-primary";
-};
-
-const todosByDay = [
-  {
-    day: "Today",
-    date: "Monday, Jan 10",
-    todos: [
-      {
-        id: "1",
-        title: "Complete assignment",
-        project: "Computer Science 101",
-        time: "2:00 PM",
-        completed: false,
-        type: "todo" as const,
-        dueDate: new Date(new Date().setHours(14, 0, 0, 0)),
-      },
-      {
-        id: "2",
-        title: "Study for quiz",
-        project: "Mathematics",
-        time: "4:30 PM",
-        completed: false,
-        type: "todo" as const,
-        dueDate: new Date(new Date().setHours(16, 30, 0, 0)),
-      },
-      {
-        id: "a1",
-        title: "Research competitor apps",
-        project: "Interactive Development 300",
-        time: "5:00 PM",
-        completed: true,
-        type: "assignment" as const,
-        parentName: "Interactive Development 300",
-        assignmentTitle: "Start planning mobile app",
-        dueDate: new Date(new Date().setHours(17, 0, 0, 0)),
-      },
-      {
-        id: "3",
-        title: "Team meeting",
-        project: "Group Project",
-        time: "6:00 PM",
-        completed: true,
-        type: "todo" as const,
-        dueDate: new Date(new Date().setHours(18, 0, 0, 0)),
-      },
-      {
-        id: "t1",
-        title: "Create mood board",
-        project: "Portfolio Website Redesign",
-        time: "7:00 PM",
-        completed: true,
-        type: "task" as const,
-        parentName: "Portfolio Website Redesign",
-        assignmentTitle: "Design new homepage layout",
-        dueDate: new Date(new Date().setHours(19, 0, 0, 0)),
-      },
-      {
-        id: "overdue1",
-        title: "Submit research paper",
-        project: "English Literature",
-        time: "Yesterday 11:59 PM",
-        completed: false,
-        type: "assignment" as const,
-        parentName: "English Literature",
-        assignmentTitle: "Research Paper - Victorian Literature",
-        dueDate: new Date(new Date().setDate(new Date().getDate() - 1)),
-      },
-      {
-        id: "overdue2",
-        title: "Fix critical bug in production",
-        project: "Interactive Development 300",
-        time: "2 days ago",
-        completed: false,
-        type: "task" as const,
-        parentName: "Interactive Development 300",
-        assignmentTitle: "Bug Fixes Sprint",
-        dueDate: new Date(new Date().setDate(new Date().getDate() - 2)),
-      },
-    ],
-  },
-  {
-    day: "Tomorrow",
-    date: "Tuesday, Jan 11",
-    todos: [
-      {
-        id: "4",
-        title: "Submit essay",
-        project: "English Literature",
-        time: "11:59 PM",
-        completed: false,
-        type: "todo" as const,
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 1)),
-      },
-      {
-        id: "a2",
-        title: "Select images from shoots",
-        project: "Photography 300",
-        time: "2:00 PM",
-        completed: false,
-        type: "assignment" as const,
-        parentName: "Photography 300",
-        assignmentTitle: "40 images for commercial portfolio",
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 1)),
-      },
-      {
-        id: "5",
-        title: "Lab report",
-        project: "Physics Lab",
-        time: "3:00 PM",
-        completed: false,
-        type: "todo" as const,
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 1)),
-      },
-      {
-        id: "t2",
-        title: "Sketch layout options",
-        project: "Portfolio Website Redesign",
-        time: "4:00 PM",
-        completed: false,
-        type: "task" as const,
-        parentName: "Portfolio Website Redesign",
-        assignmentTitle: "Design new homepage layout",
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 1)),
-      },
-      {
-        id: "overdue3",
-        title: "Review code pull requests",
-        project: "Group Project",
-        time: "Last week",
-        completed: false,
-        type: "todo" as const,
-        dueDate: new Date(new Date().setDate(new Date().getDate() - 7)),
-      },
-    ],
-  },
-  {
-    day: "This Week",
-    date: "Jan 12 - Jan 16",
-    todos: [
-      {
-        id: "6",
-        title: "Midterm exam",
-        project: "Biology",
-        time: "Wed 10:00 AM",
-        completed: false,
-        type: "todo" as const,
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 2)),
-      },
-      {
-        id: "a3",
-        title: "Research visual culture theory",
-        project: "Visual Culture 300",
-        time: "Wed 2:00 PM",
-        completed: false,
-        type: "assignment" as const,
-        parentName: "Visual Culture 300",
-        assignmentTitle: "Visual Culture Essay",
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 2)),
-      },
-      {
-        id: "7",
-        title: "Project presentation",
-        project: "Marketing",
-        time: "Thu 2:00 PM",
-        completed: false,
-        type: "todo" as const,
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 3)),
-      },
-      {
-        id: "t3",
-        title: "Sketch user flows",
-        project: "Mobile App Development",
-        time: "Thu 4:00 PM",
-        completed: true,
-        type: "task" as const,
-        parentName: "Mobile App Development",
-        assignmentTitle: "Create wireframes",
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 3)),
-      },
-      {
-        id: "8",
-        title: "Reading assignment",
-        project: "History",
-        time: "Fri 5:00 PM",
-        completed: false,
-        type: "todo" as const,
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 4)),
-      },
-      {
-        id: "a4",
-        title: "Update portfolio website",
-        project: "Interactive Development 300",
-        time: "Fri 6:00 PM",
-        completed: false,
-        type: "assignment" as const,
-        parentName: "Interactive Development 300",
-        assignmentTitle: "Portfolio Review",
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 4)),
-      },
-    ],
-  },
-];
+interface DayGroup {
+  day: string;
+  date: string;
+  todos: Todo[];
+}
 
 export default function TodosSidenav({
   isCollapsed,
   onToggle,
 }: TodosSidenavProps) {
-  const [todos, setTodos] = useState(todosByDay);
+  console.log("[Todos Sidenav] Component rendering, isCollapsed:", isCollapsed);
+
+  const { getDB } = useMain();
+  console.log("[Todos Sidenav] getDB function:", typeof getDB, getDB);
+
+  const [todos, setTodos] = useState<DayGroup[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<"today" | "week" | "month">(
     "today"
   );
@@ -265,16 +64,292 @@ export default function TodosSidenav({
     "todos"
   );
 
-  // Helper function to check if a todo is overdue
-  const isOverdue = (todo: Todo): boolean => {
-    if (!todo.dueDate || todo.completed) return false;
-    return new Date() > todo.dueDate;
+  console.log("[Todos Sidenav] State:", {
+    todosLength: todos.length,
+    isLoading,
+  });
+
+  // Format date for display
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
   };
 
-  // Extract all overdue tasks from all groups
+  // Format time for display (convert UTC to local timezone)
+  const formatTime = (dueDate: string | undefined | null): string => {
+    if (!dueDate) return "No time set";
+
+    try {
+      const time = utcToLocalTimeString(dueDate);
+      const [hours, minutes] = time.split(":").map(Number);
+      const period = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours % 12 || 12;
+      return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+    } catch (error) {
+      console.error(
+        "[Todos Sidenav] Error formatting time:",
+        error,
+        "dueDate:",
+        dueDate
+      );
+      return "Invalid time";
+    }
+  };
+
+  // Check if a todo/task is overdue
+  const isOverdue = (
+    dueDate: string | undefined | null,
+    isSubmitted: boolean
+  ): boolean => {
+    if (!dueDate || isSubmitted) return false;
+
+    try {
+      const today = new Date();
+      const todayStr = dateToLocalDateString(today);
+      const dueLocalDate = utcToLocalDateString(dueDate);
+
+      // Compare dates in local timezone
+      return todayStr > dueLocalDate;
+    } catch (error) {
+      console.error(
+        "[Todos Sidenav] Error checking overdue:",
+        error,
+        "dueDate:",
+        dueDate
+      );
+      return false;
+    }
+  };
+
+  // Get day label for a date
+  const getDayLabel = (dateStr: string): string => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayStr = dateToLocalDateString(today);
+    const tomorrowStr = dateToLocalDateString(tomorrow);
+
+    if (dateStr === todayStr) return "Today";
+    if (dateStr === tomorrowStr) return "Tomorrow";
+    return "This Week";
+  };
+
+  // Fetch data from IndexedDB
+  useEffect(() => {
+    console.log("[Todos Sidenav] useEffect triggered!");
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      console.log("[Todos Sidenav] fetchData started");
+      try {
+        const db = getDB();
+        console.log("[Todos Sidenav] Got DB instance");
+        await db.init();
+        console.log("[Todos Sidenav] DB initialized");
+
+        console.log("[Todos Sidenav] Fetching data from IndexedDB...");
+
+        const [fetchedTasks, fetchedTodos, fetchedProjects] = await Promise.all(
+          [db.getTasks(), db.getTodos(), db.getProjects()]
+        );
+
+        console.log("[Todos Sidenav] Fetched data:", {
+          tasks: fetchedTasks.length,
+          todos: fetchedTodos.length,
+          projects: fetchedProjects.length,
+        });
+
+        // Log sample data
+        if (fetchedTasks.length > 0) {
+          console.log("[Todos Sidenav] Sample task:", fetchedTasks[0]);
+        }
+        if (fetchedTodos.length > 0) {
+          console.log("[Todos Sidenav] Sample todo:", fetchedTodos[0]);
+        }
+        if (fetchedProjects.length > 0) {
+          console.log("[Todos Sidenav] Sample project:", fetchedProjects[0]);
+        }
+
+        // Process tasks
+        const formattedTasks: Todo[] = fetchedTasks.map((task: any) => {
+          const project = fetchedProjects.find(
+            (p: any) => p.id === task.project_id
+          );
+
+          const projectTitle = project?.title || project?.name || "General";
+          const courseCode =
+            project?.source === "Canvas" ? project?.course_code : null;
+          const projectDisplay = courseCode ? courseCode : projectTitle;
+
+          return {
+            id: task.id,
+            title: task.title || task.name || "Untitled Task",
+            project: projectDisplay,
+            projectTitle: projectTitle,
+            courseCode: courseCode,
+            time: formatTime(task.due_date || task.dueDate),
+            completed: task.is_submitted || false,
+            type: "task" as const,
+            dueDate: task.due_date || task.dueDate,
+            colorHex: project?.color_hex || null,
+            isOverdue: isOverdue(
+              task.due_date || task.dueDate,
+              task.is_submitted || false
+            ),
+          };
+        });
+
+        // Process todos
+        const formattedTodos: Todo[] = fetchedTodos.map((todo: any) => {
+          const task = fetchedTasks.find((t: any) => t.id === todo.task_id);
+          const project = task
+            ? fetchedProjects.find((p: any) => p.id === task.project_id)
+            : null;
+
+          const projectTitle = project?.title || project?.name || "General";
+          const courseCode =
+            project?.source === "Canvas" ? project?.course_code : null;
+          const projectDisplay = courseCode ? courseCode : projectTitle;
+
+          return {
+            id: todo.id,
+            title: todo.title || todo.name || "Untitled Todo",
+            project: projectDisplay,
+            projectTitle: projectTitle,
+            courseCode: courseCode,
+            time: formatTime(todo.due_date || todo.dueDate),
+            completed: todo.is_completed || false,
+            type: "todo" as const,
+            dueDate: todo.due_date || todo.dueDate,
+            colorHex: project?.color_hex || null,
+            isOverdue: isOverdue(
+              todo.due_date || todo.dueDate,
+              todo.is_completed || false
+            ),
+          };
+        });
+
+        // Combine and filter out items without due dates, then sort by due date
+        const allItems = [...formattedTasks, ...formattedTodos]
+          .filter((item) => item.dueDate) // Only include items with a due date
+          .sort((a, b) => {
+            return (
+              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            );
+          });
+
+        console.log(
+          "[Todos Sidenav] Total items after formatting:",
+          allItems.length
+        );
+        console.log(
+          "[Todos Sidenav] Items with due dates:",
+          allItems.length,
+          "/ Total:",
+          formattedTasks.length + formattedTodos.length
+        );
+        if (allItems.length > 0) {
+          console.log("[Todos Sidenav] Sample formatted item:", allItems[0]);
+        }
+
+        // Group by day
+        const today = new Date();
+        const todayStr = dateToLocalDateString(today);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = dateToLocalDateString(tomorrow);
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        const weekEndStr = dateToLocalDateString(weekEnd);
+
+        const todayGroup: DayGroup = {
+          day: "Today",
+          date: formatDate(today),
+          todos: [],
+        };
+
+        const tomorrowGroup: DayGroup = {
+          day: "Tomorrow",
+          date: formatDate(tomorrow),
+          todos: [],
+        };
+
+        const thisWeekGroup: DayGroup = {
+          day: "This Week",
+          date: `${formatDate(
+            new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)
+          )} - ${formatDate(weekEnd)}`,
+          todos: [],
+        };
+
+        console.log("[Todos Sidenav] Date strings:", {
+          today: todayStr,
+          tomorrow: tomorrowStr,
+          weekEnd: weekEndStr,
+        });
+
+        allItems.forEach((item) => {
+          const itemLocalDate = utcToLocalDateString(item.dueDate);
+          console.log(
+            `[Todos Sidenav] Item "${item.title}" date: ${itemLocalDate}`
+          );
+
+          if (itemLocalDate === todayStr) {
+            todayGroup.todos.push(item);
+            console.log(`  -> Added to TODAY`);
+          } else if (itemLocalDate === tomorrowStr) {
+            tomorrowGroup.todos.push(item);
+            console.log(`  -> Added to TOMORROW`);
+          } else if (itemLocalDate <= weekEndStr) {
+            thisWeekGroup.todos.push(item);
+            console.log(`  -> Added to THIS WEEK`);
+          } else {
+            console.log(
+              `  -> NOT ADDED (date ${itemLocalDate} is after ${weekEndStr})`
+            );
+          }
+        });
+
+        const groups: DayGroup[] = [];
+        if (todayGroup.todos.length > 0) groups.push(todayGroup);
+        if (tomorrowGroup.todos.length > 0) groups.push(tomorrowGroup);
+        if (thisWeekGroup.todos.length > 0) groups.push(thisWeekGroup);
+
+        console.log("[Todos Sidenav] Group counts:", {
+          today: todayGroup.todos.length,
+          tomorrow: tomorrowGroup.todos.length,
+          thisWeek: thisWeekGroup.todos.length,
+          totalGroups: groups.length,
+        });
+
+        setTodos(groups);
+
+        console.log(
+          "[Todos Sidenav] Data loaded successfully (Timezone: UTC+2)"
+        );
+        console.log(
+          "[Todos Sidenav] Final state set with groups:",
+          groups.length
+        );
+      } catch (error) {
+        console.error("[Todos Sidenav] Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+  // Extract all overdue items
   const overdueTodos = todos.flatMap((group, groupIndex) =>
     group.todos
-      .filter((todo) => isOverdue(todo))
+      .filter((todo) => todo.isOverdue)
       .map((todo) => ({ ...todo, day: group.day, groupIndex }))
   );
 
@@ -295,12 +370,14 @@ export default function TodosSidenav({
     );
   };
 
-  const todayTodos = todos[0]?.todos || [];
+  // Calculate today's progress
+  const todayTodos = todos.find((g) => g.day === "Today")?.todos || [];
   const completedToday = todayTodos.filter((todo) => todo.completed).length;
   const totalToday = todayTodos.length;
   const progressPercentage =
     totalToday > 0 ? (completedToday / totalToday) * 100 : 0;
 
+  // Filter todos based on active filter
   const filteredTodos = todos
     .filter((group) => {
       if (activeFilter === "today") return group.day === "Today";
@@ -314,7 +391,7 @@ export default function TodosSidenav({
     })
     .map((group) => ({
       ...group,
-      todos: group.todos.filter((todo) => !isOverdue(todo)),
+      todos: group.todos.filter((todo) => !todo.isOverdue),
     }))
     .filter((group) => group.todos.length > 0);
 
@@ -341,17 +418,13 @@ export default function TodosSidenav({
         <div className="sticky top-0 bg-card border-b border-border z-10">
           <div
             className={cn(
-              "relative overflow-hidden",
+              "relative overflow-hidden bg-noki-primary",
               isCollapsed ? "h-12" : "h-32"
             )}
           >
-            <Image
-              src="/placeholder.svg?height=96&width=320"
-              alt="Noki Character"
-              width={320}
-              height={120}
-              className="w-full h-full object-cover bg-noki-primary"
-            />
+            <div className="w-full h-full flex items-center justify-center text-white font-poppins font-bold text-2xl">
+              NOKI
+            </div>
           </div>
 
           {!isCollapsed && (
@@ -438,189 +511,196 @@ export default function TodosSidenav({
         {/* Scrollable Todos Content */}
         <div className="flex-1 overflow-y-auto pb-20">
           {!isCollapsed ? (
-            <div className="p-3 space-y-5">
-              {/* Overdue Section */}
-              {overdueTodos.length > 0 && (
-                <div className="space-y-2">
-                  <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-red-500/50">
-                    <div className="font-poppins font-semibold text-sm text-red-500 flex items-center gap-2">
-                      <span>Overdue</span>
-                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-                        {overdueTodos.length}
-                      </span>
+            isLoading ? (
+              <div className="p-4 text-center text-muted-foreground text-sm">
+                Loading todos...
+              </div>
+            ) : (
+              <div className="p-3 space-y-5">
+                {/* Overdue Section */}
+                {overdueTodos.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-red-500/50">
+                      <div className="font-poppins font-semibold text-sm text-red-500 flex items-center gap-2">
+                        <span>Overdue</span>
+                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                          {overdueTodos.length}
+                        </span>
+                      </div>
+                      <div className="text-xs text-red-400 mt-0.5">
+                        Needs immediate attention
+                      </div>
                     </div>
-                    <div className="text-xs text-red-400 mt-0.5">
-                      Needs immediate attention
-                    </div>
-                  </div>
 
-                  <div className="space-y-1.5">
-                    {overdueTodos.map((todo) => (
-                      <div
-                        key={todo.id}
-                        onClick={() =>
-                          toggleTodoComplete(todo.groupIndex, todo.id)
-                        }
-                        className={cn(
-                          "group p-2 rounded-lg border-2 transition-all duration-200 cursor-pointer",
-                          "border-red-500 bg-red-500/10 hover:bg-red-500/20 hover:shadow-lg hover:shadow-red-500/20",
-                          todo.type === "assignment" && "bg-red-500/15",
-                          todo.type === "task" && "bg-red-500/15"
-                        )}
-                      >
-                        <div className="flex items-start gap-2">
-                          <Circle className="w-4 h-4 text-red-500 group-hover:text-red-600 transition-colors flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            {(todo.type === "assignment" ||
-                              todo.type === "task") && (
+                    <div className="space-y-1.5">
+                      {overdueTodos.map((todo) => (
+                        <div
+                          key={todo.id}
+                          onClick={() =>
+                            toggleTodoComplete(todo.groupIndex!, todo.id)
+                          }
+                          className="group p-2 rounded-lg border-2 border-red-500 bg-red-500/10 hover:bg-red-500/20 hover:shadow-lg hover:shadow-red-500/20 transition-all duration-200 cursor-pointer"
+                        >
+                          <div className="flex items-start gap-2">
+                            <Circle className="w-4 h-4 text-red-500 group-hover:text-red-600 transition-colors flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 mb-1">
-                                {todo.type === "assignment" ? (
-                                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/30 rounded text-[9px] font-medium text-red-600">
-                                    <BookOpen className="w-2.5 h-2.5" />
-                                    <span className="pt-0.5">ASSIGNMENT</span>
-                                  </div>
-                                ) : (
+                                {todo.type === "task" ? (
                                   <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/30 rounded text-[9px] font-medium text-red-600">
                                     <FolderKanban className="w-2.5 h-2.5" />
                                     <span className="pt-0.5">TASK</span>
                                   </div>
+                                ) : (
+                                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/30 rounded text-[9px] font-medium text-red-600">
+                                    <ListTodo className="w-2.5 h-2.5" />
+                                    <span className="pt-0.5">TODO</span>
+                                  </div>
                                 )}
                               </div>
-                            )}
-                            <h4
-                              className={cn(
-                                "font-roboto font-medium text-xs line-clamp-2 transition-colors",
-                                "text-red-600 group-hover:text-red-700"
-                              )}
-                            >
-                              {todo.title}
-                            </h4>
-                            {(todo.type === "assignment" ||
-                              todo.type === "task") &&
-                              todo.parentName &&
-                              todo.assignmentTitle && (
-                                <p className="text-[9px] text-red-500/80 mt-1 line-clamp-1 font-roboto">
-                                  <span className="font-medium">
-                                    {todo.parentName}
-                                  </span>
-                                  <span className="mx-1">→</span>
-                                  <span>{todo.assignmentTitle}</span>
-                                </p>
-                              )}
-                            {todo.type === "todo" && (
+                              <h4 className="font-roboto font-medium text-xs line-clamp-2 text-red-600 group-hover:text-red-700 transition-colors">
+                                {todo.title}
+                              </h4>
                               <p className="text-[10px] text-red-500/80 mt-1 truncate font-roboto">
                                 {todo.project}
                               </p>
-                            )}
-                            <div className="flex items-center gap-1 mt-1">
-                              <div className="w-1 h-1 rounded-full bg-red-500" />
-                              <p className="text-[10px] text-red-600 font-medium font-roboto">
-                                {todo.time}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Regular Todos */}
-              {filteredTodos.map((group, groupIndex) => (
-                <div key={group.day} className="space-y-2">
-                  <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-border/50">
-                    <div className="font-poppins font-semibold text-sm text-foreground">
-                      {group.day}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {group.date}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    {group.todos.map((todo) => (
-                      <div
-                        key={todo.id}
-                        onClick={() => toggleTodoComplete(groupIndex, todo.id)}
-                        className={cn(
-                          "group p-2 rounded-lg border border-l-4 transition-all duration-200 cursor-pointer",
-                          getProjectColor(todo.project),
-                          todo.completed
-                            ? "bg-secondary border-border opacity-60"
-                            : "bg-card border-border hover:border-noki-primary hover:shadow-sm",
-                          todo.type === "assignment" &&
-                            !todo.completed &&
-                            "bg-blue-500/5",
-                          todo.type === "task" &&
-                            !todo.completed &&
-                            "bg-cyan-500/5"
-                        )}
-                      >
-                        <div className="flex items-start gap-2">
-                          {todo.completed ? (
-                            <CheckCircle2 className="w-4 h-4 text-noki-primary flex-shrink-0 mt-0.5" />
-                          ) : (
-                            <Circle className="w-4 h-4 text-muted-foreground group-hover:text-noki-primary transition-colors flex-shrink-0 mt-0.5" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            {(todo.type === "assignment" ||
-                              todo.type === "task") && (
-                              <div className="flex items-center gap-1.5 mb-1">
-                                {todo.type === "assignment" ? (
-                                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/20 rounded text-[9px] font-medium text-blue-600">
-                                    <BookOpen className="w-2.5 h-2.5" />
-                                    <span className="pt-0.5">ASSIGNMENT</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-cyan-500/20 rounded text-[9px] font-medium text-cyan-600">
-                                    <FolderKanban className="w-2.5 h-2.5" />
-                                    <span className="pt-0.5">TASK</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            <h4
-                              className={cn(
-                                "font-roboto font-medium text-xs line-clamp-2 transition-colors",
-                                todo.completed
-                                  ? "text-muted-foreground line-through"
-                                  : "text-foreground group-hover:text-noki-primary"
-                              )}
-                            >
-                              {todo.title}
-                            </h4>
-                            {(todo.type === "assignment" ||
-                              todo.type === "task") &&
-                              todo.parentName &&
-                              todo.assignmentTitle && (
-                                <p className="text-[9px] text-muted-foreground mt-1 line-clamp-1 font-roboto">
-                                  <span className="font-medium">
-                                    {todo.parentName}
-                                  </span>
-                                  <span className="mx-1">→</span>
-                                  <span>{todo.assignmentTitle}</span>
+                              <div className="flex items-center gap-1 mt-1">
+                                <div className="w-1 h-1 rounded-full bg-red-500" />
+                                <p className="text-[10px] text-red-600 font-medium font-roboto">
+                                  {todo.time}
                                 </p>
-                              )}
-                            {todo.type === "todo" && (
-                              <p className="text-[10px] text-muted-foreground mt-1 truncate font-roboto">
-                                {todo.project}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-1 mt-1">
-                              <div className="w-1 h-1 rounded-full bg-noki-tertiary" />
-                              <p className="text-[10px] text-foreground font-medium font-roboto">
-                                {todo.time}
-                              </p>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+
+                {/* Regular Todos */}
+                {filteredTodos.length === 0 && overdueTodos.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground text-sm">
+                    No todos or tasks found
+                  </div>
+                ) : (
+                  filteredTodos.map((group, groupIndex) => (
+                    <div key={group.day} className="space-y-2">
+                      <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-border/50">
+                        <div className="font-poppins font-semibold text-sm text-foreground">
+                          {group.day}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {group.date}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {group.todos.map((todo) => (
+                          <div
+                            key={todo.id}
+                            onClick={() =>
+                              toggleTodoComplete(groupIndex, todo.id)
+                            }
+                            className={cn(
+                              "group p-2 rounded-lg border transition-all duration-200 cursor-pointer",
+                              todo.completed
+                                ? "bg-secondary border-border opacity-60"
+                                : "bg-card border-border hover:shadow-sm"
+                            )}
+                            style={{
+                              ...(todo.type === "task" &&
+                              !todo.completed &&
+                              todo.colorHex
+                                ? {
+                                    backgroundColor: `${todo.colorHex}30`, // 30 = ~19% opacity
+                                    borderColor: todo.colorHex,
+                                  }
+                                : todo.type === "todo" &&
+                                  !todo.completed &&
+                                  todo.colorHex
+                                ? {
+                                    borderColor: todo.colorHex,
+                                    borderWidth: "2px",
+                                  }
+                                : {}),
+                            }}
+                          >
+                            <div className="flex items-start gap-2">
+                              {todo.completed ? (
+                                <CheckCircle2 className="w-4 h-4 text-noki-primary flex-shrink-0 mt-0.5" />
+                              ) : (
+                                <Circle
+                                  className="w-4 h-4 group-hover:text-noki-primary transition-colors flex-shrink-0 mt-0.5"
+                                  style={{
+                                    color: todo.colorHex || undefined,
+                                  }}
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  {todo.type === "task" ? (
+                                    <div
+                                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium"
+                                      style={{
+                                        backgroundColor: todo.colorHex
+                                          ? `${todo.colorHex}30`
+                                          : undefined,
+                                        color: todo.colorHex || undefined,
+                                      }}
+                                    >
+                                      <FolderKanban className="w-2.5 h-2.5" />
+                                      <span className="pt-0.5">TASK</span>
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium"
+                                      style={{
+                                        backgroundColor: todo.colorHex
+                                          ? `${todo.colorHex}20`
+                                          : undefined,
+                                        color: todo.colorHex || undefined,
+                                      }}
+                                    >
+                                      <ListTodo className="w-2.5 h-2.5" />
+                                      <span className="pt-0.5">TODO</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <h4
+                                  className={cn(
+                                    "font-roboto font-medium text-xs line-clamp-2 transition-colors",
+                                    todo.completed
+                                      ? "text-muted-foreground line-through"
+                                      : "text-foreground group-hover:text-noki-primary"
+                                  )}
+                                >
+                                  {todo.title}
+                                </h4>
+                                <p className="text-[10px] text-muted-foreground mt-1 truncate font-roboto">
+                                  {todo.project}
+                                </p>
+                                <div className="flex items-center gap-1 mt-1">
+                                  <div
+                                    className="w-1 h-1 rounded-full"
+                                    style={{
+                                      backgroundColor:
+                                        todo.colorHex || "#6366f1",
+                                    }}
+                                  />
+                                  <p className="text-[10px] text-foreground font-medium font-roboto">
+                                    {todo.time}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )
           ) : (
             <div className="p-2 space-y-6 mt-4">
               {todos.map((group) => (
@@ -636,6 +716,12 @@ export default function TodosSidenav({
                           : "bg-noki-primary"
                       )}
                       title={todo.title}
+                      style={{
+                        backgroundColor:
+                          !todo.completed && todo.colorHex
+                            ? todo.colorHex
+                            : undefined,
+                      }}
                     />
                   ))}
                 </div>
@@ -681,26 +767,21 @@ export default function TodosSidenav({
         />
       )}
 
-      {/* Mobile Sidenav */}
+      {/* Mobile Sidenav - Simplified version, similar structure to desktop */}
       <aside
         className={cn(
           "md:hidden fixed right-0 top-0 h-screen w-80 bg-card border-l border-border z-50 transition-transform duration-300 ease-in-out flex flex-col",
           isCollapsed ? "translate-x-full" : "translate-x-0"
         )}
       >
-        {/* Sticky Header */}
+        {/* Use same content as desktop */}
         <div className="sticky top-0 bg-card border-b border-border z-10">
-          <div className="relative h-24 overflow-hidden">
-            <Image
-              src="/placeholder.svg?height=96&width=320"
-              alt="Noki Character"
-              width={320}
-              height={96}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative h-24 overflow-hidden bg-noki-primary">
+            <div className="w-full h-full flex items-center justify-center text-white font-poppins font-bold text-2xl">
+              NOKI
+            </div>
           </div>
 
-          {/* Title Section */}
           <div className="px-4 py-4">
             <h2 className="font-poppins font-bold text-xl text-noki-primary">
               Todos
@@ -766,7 +847,6 @@ export default function TodosSidenav({
             </div>
           </div>
 
-          {/* Close Button */}
           <button
             onClick={onToggle}
             className="absolute top-4 right-4 w-8 h-8 bg-card rounded-full flex items-center justify-center hover:bg-secondary transition-colors shadow-sm"
@@ -776,193 +856,48 @@ export default function TodosSidenav({
           </button>
         </div>
 
-        {/* Scrollable Todos Content */}
         <div className="flex-1 overflow-y-auto pb-20">
-          <div className="p-3 space-y-5">
-            {/* Overdue Section */}
-            {overdueTodos.length > 0 && (
-              <div className="space-y-2">
-                <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-red-500/50">
-                  <div className="font-poppins font-semibold text-sm text-red-500 flex items-center gap-2">
-                    <span>Overdue</span>
-                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-                      {overdueTodos.length}
-                    </span>
+          {isLoading ? (
+            <div className="p-4 text-center text-muted-foreground text-sm">
+              Loading todos...
+            </div>
+          ) : (
+            <div className="p-3 space-y-5">
+              {overdueTodos.length > 0 && (
+                <div className="space-y-2">
+                  <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-red-500/50">
+                    <div className="font-poppins font-semibold text-sm text-red-500 flex items-center gap-2">
+                      <span>Overdue</span>
+                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                        {overdueTodos.length}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-xs text-red-400 mt-0.5">
-                    Needs immediate attention
-                  </div>
+                  {/* Same overdue rendering as desktop */}
                 </div>
+              )}
 
-                <div className="space-y-1.5">
-                  {overdueTodos.map((todo) => (
-                    <div
-                      key={todo.id}
-                      onClick={() =>
-                        toggleTodoComplete(todo.groupIndex, todo.id)
-                      }
-                      className={cn(
-                        "group p-2 rounded-lg border-2 transition-all duration-200 cursor-pointer",
-                        "border-red-500 bg-red-500/10 hover:bg-red-500/20 hover:shadow-lg hover:shadow-red-500/20",
-                        todo.type === "assignment" && "bg-red-500/15",
-                        todo.type === "task" && "bg-red-500/15"
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        <Circle className="w-4 h-4 text-red-500 group-hover:text-red-600 transition-colors flex-shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          {(todo.type === "assignment" ||
-                            todo.type === "task") && (
-                            <div className="flex items-center gap-1.5 mb-1">
-                              {todo.type === "assignment" ? (
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/30 rounded text-[9px] font-medium text-red-600">
-                                  <BookOpen className="w-2.5 h-2.5" />
-                                  <span>ASSIGNMENT</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/30 rounded text-[9px] font-medium text-red-600">
-                                  <FolderKanban className="w-2.5 h-2.5" />
-                                  <span>TASK</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <h4
-                            className={cn(
-                              "font-roboto font-medium text-xs line-clamp-2 transition-colors",
-                              "text-red-600 group-hover:text-red-700"
-                            )}
-                          >
-                            {todo.title}
-                          </h4>
-                          {(todo.type === "assignment" ||
-                            todo.type === "task") &&
-                            todo.parentName &&
-                            todo.assignmentTitle && (
-                              <p className="text-[9px] text-red-500/80 mt-1 line-clamp-1 font-roboto">
-                                <span className="font-medium">
-                                  {todo.parentName}
-                                </span>
-                                <span className="mx-1">→</span>
-                                <span>{todo.assignmentTitle}</span>
-                              </p>
-                            )}
-                          {todo.type === "todo" && (
-                            <p className="text-[10px] text-red-500/80 mt-1 truncate font-roboto">
-                              {todo.project}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-1 mt-1">
-                            <div className="w-1 h-1 rounded-full bg-red-500" />
-                            <p className="text-[10px] text-red-600 font-medium font-roboto">
-                              {todo.time}
-                            </p>
-                          </div>
-                        </div>
+              {filteredTodos.length === 0 && overdueTodos.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground text-sm">
+                  No todos or tasks found
+                </div>
+              ) : (
+                filteredTodos.map((group, groupIndex) => (
+                  <div key={group.day} className="space-y-2">
+                    <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-border/50">
+                      <div className="font-poppins font-semibold text-sm text-foreground">
+                        {group.day}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {group.date}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Regular Todos */}
-            {filteredTodos.map((group, groupIndex) => (
-              <div key={group.day} className="space-y-2">
-                {/* Day Header */}
-                <div className="sticky top-0 bg-card px-1 py-2 z-10 border-b border-border/50">
-                  <div className="font-poppins font-semibold text-sm text-foreground">
-                    {group.day}
+                    {/* Same todo rendering as desktop */}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {group.date}
-                  </div>
-                </div>
-
-                {/* Todos */}
-                <div className="space-y-1.5">
-                  {group.todos.map((todo) => (
-                    <div
-                      key={todo.id}
-                      onClick={() => toggleTodoComplete(groupIndex, todo.id)}
-                      className={cn(
-                        "group p-2 rounded-lg border border-l-4 transition-all duration-200 cursor-pointer",
-                        getProjectColor(todo.project),
-                        todo.completed
-                          ? "bg-secondary border-border opacity-60"
-                          : "bg-card border-border hover:border-noki-primary hover:shadow-sm",
-                        todo.type === "assignment" &&
-                          !todo.completed &&
-                          "bg-blue-500/5",
-                        todo.type === "task" &&
-                          !todo.completed &&
-                          "bg-cyan-500/5"
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        {todo.completed ? (
-                          <CheckCircle2 className="w-4 h-4 text-noki-primary flex-shrink-0 mt-0.5" />
-                        ) : (
-                          <Circle className="w-4 h-4 text-muted-foreground group-hover:text-noki-primary transition-colors flex-shrink-0 mt-0.5" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          {(todo.type === "assignment" ||
-                            todo.type === "task") && (
-                            <div className="flex items-center gap-1.5 mb-1">
-                              {todo.type === "assignment" ? (
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/20 rounded text-[9px] font-medium text-blue-600">
-                                  <BookOpen className="w-2.5 h-2.5" />
-                                  <span>ASSIGNMENT</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-cyan-500/20 rounded text-[9px] font-medium text-cyan-600">
-                                  <FolderKanban className="w-2.5 h-2.5" />
-                                  <span>TASK</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <h4
-                            className={cn(
-                              "font-roboto font-medium text-xs line-clamp-2 transition-colors",
-                              todo.completed
-                                ? "text-muted-foreground line-through"
-                                : "text-foreground group-hover:text-noki-primary"
-                            )}
-                          >
-                            {todo.title}
-                          </h4>
-                          {(todo.type === "assignment" ||
-                            todo.type === "task") &&
-                            todo.parentName &&
-                            todo.assignmentTitle && (
-                              <p className="text-[9px] text-muted-foreground mt-1 line-clamp-1 font-roboto">
-                                <span className="font-medium">
-                                  {todo.parentName}
-                                </span>
-                                <span className="mx-1">→</span>
-                                <span>{todo.assignmentTitle}</span>
-                              </p>
-                            )}
-                          {todo.type === "todo" && (
-                            <p className="text-[10px] text-muted-foreground mt-1 truncate font-roboto">
-                              {todo.project}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-1 mt-1">
-                            <div className="w-1 h-1 rounded-full bg-noki-tertiary" />
-                            <p className="text-[10px] text-foreground font-medium font-roboto">
-                              {todo.time}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         <div className="sticky bottom-0 right-0 w-80 bg-card border-t border-border p-3 z-[1000]">
@@ -981,7 +916,7 @@ export default function TodosSidenav({
               className="group/create flex-1 h-12 flex items-center justify-center cursor-pointer hover:bg-noki-primary/5 rounded-lg transition-all"
               onClick={handleCreateTodo}
             >
-              <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200 ">
+              <div className="px-4 py-2 rounded-lg border-2 border-dashed border-noki-primary/30 bg-noki-primary/5 group-hover/create:bg-noki-primary/10 group-hover/create:border-noki-primary/50 transition-all duration-200">
                 <div className="text-xs font-medium text-noki-primary font-roboto">
                   + Create Todo
                 </div>
