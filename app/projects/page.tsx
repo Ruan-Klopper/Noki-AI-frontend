@@ -10,11 +10,17 @@ import {
   Plus,
   LayoutGrid,
   List,
+  Filter,
+  ArrowUpDown,
 } from "lucide-react";
+import Image from "next/image";
 import { useState, useMemo, useEffect } from "react";
 import { ManageProjectsModal } from "@/components/global/manage-projects-modal";
 import { useMain } from "@/services/hooks/useMain";
 import { utcToLocalDateString } from "@/lib/timezone-config";
+import { Select } from "antd";
+
+const { Option } = Select;
 
 // Type definitions
 interface Todo {
@@ -65,6 +71,12 @@ export default function ProjectsPage() {
     null
   );
 
+  // Sorting and Filtering State for "All" view
+  const [sortBy, setSortBy] = useState<"date-asc" | "date-desc">("date-asc");
+  const [filterBy, setFilterBy] = useState<
+    "all" | "complete" | "incomplete" | "overdue"
+  >("all");
+
   // Data State
   const [personalProjects, setPersonalProjects] = useState<Project[]>([]);
   const [canvasCourses, setCanvasCourses] = useState<Project[]>([]);
@@ -95,6 +107,23 @@ export default function ProjectsPage() {
         dueDate
       );
       return "Invalid date";
+    }
+  };
+
+  // Helper function to check if an item is overdue
+  const isOverdue = (dueDate: string | null, isCompleted: boolean): boolean => {
+    if (!dueDate || isCompleted) return false;
+
+    try {
+      const localDateStr = utcToLocalDateString(dueDate);
+      const itemDate = new Date(localDateStr);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      itemDate.setHours(0, 0, 0, 0);
+
+      return itemDate < today;
+    } catch (error) {
+      return false;
     }
   };
 
@@ -257,17 +286,36 @@ export default function ProjectsPage() {
       });
     });
 
-    // Sort by due date (items without dates go to the end)
-    return allItems.sort((a, b) => {
+    // Apply filters
+    let filteredItems = allItems;
+
+    if (filterBy === "complete") {
+      filteredItems = allItems.filter((item) => item.completed);
+    } else if (filterBy === "incomplete") {
+      filteredItems = allItems.filter((item) => !item.completed);
+    } else if (filterBy === "overdue") {
+      filteredItems = allItems.filter((item) =>
+        isOverdue(item.dueDate, item.completed)
+      );
+    }
+
+    // Apply sorting
+    return filteredItems.sort((a, b) => {
+      // Handle items without dates
       if (!a.dueDate && !b.dueDate) return 0;
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
 
       const dateA = new Date(a.dueDate);
       const dateB = new Date(b.dueDate);
-      return dateA.getTime() - dateB.getTime();
+
+      if (sortBy === "date-asc") {
+        return dateA.getTime() - dateB.getTime();
+      } else {
+        return dateB.getTime() - dateA.getTime();
+      }
     });
-  }, [canvasCourses, personalProjects]);
+  }, [canvasCourses, personalProjects, sortBy, filterBy, isOverdue]);
 
   const toggleCourse = (courseId: string) => {
     setExpandedCourse(expandedCourse === courseId ? null : courseId);
@@ -334,9 +382,9 @@ export default function ProjectsPage() {
           <div className="w-10 h-10 bg-noki-primary/10 rounded-xl flex items-center justify-center">
             <FolderKanban className="text-noki-primary" size={20} />
           </div>
-          <h2 className="text-2xl font-poppins font-semibold text-foreground">
+          <div className="text-2xl font-poppins font-semibold text-foreground">
             Personal Projects
-          </h2>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -404,11 +452,16 @@ export default function ProjectsPage() {
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-noki-tertiary/10 rounded-xl flex items-center justify-center">
-            <BookOpen className="text-noki-tertiary" size={20} />
+            <Image
+              src="/essentials/canvas_icon_white.png"
+              alt="Canvas"
+              width={20}
+              height={20}
+            />
           </div>
-          <h2 className="text-2xl font-poppins font-semibold text-foreground">
+          <div className="text-2xl font-poppins font-semibold text-foreground ">
             Canvas Courses
-          </h2>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -748,70 +801,169 @@ export default function ProjectsPage() {
         ) : (
           /* View Mode: All - Shows all tasks in a flat list */
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+            {/* Sorting and Filtering Controls */}
+            <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Filter Dropdown */}
+                <div className="flex items-center gap-2">
+                  <Filter size={16} className="text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Filter:
+                  </span>
+                  <Select
+                    value={filterBy}
+                    onChange={(value) =>
+                      setFilterBy(
+                        value as "all" | "complete" | "incomplete" | "overdue"
+                      )
+                    }
+                    style={{ minWidth: 150 }}
+                    size="middle"
+                  >
+                    <Option value="all">All Tasks</Option>
+                    <Option value="incomplete">Incomplete</Option>
+                    <Option value="complete">Complete</Option>
+                    <Option value="overdue">Overdue</Option>
+                  </Select>
+                </div>
+
+                {/* Sort Dropdown */}
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown size={16} className="text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Sort:
+                  </span>
+                  <Select
+                    value={sortBy}
+                    onChange={(value) =>
+                      setSortBy(value as "date-asc" | "date-desc")
+                    }
+                    style={{ minWidth: 180 }}
+                    size="middle"
+                  >
+                    <Option value="date-asc">Due Date (Earliest)</Option>
+                    <Option value="date-desc">Due Date (Latest)</Option>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Results Count */}
+              <div className="text-sm text-muted-foreground">
+                {isLoading ? (
+                  <span>Loading...</span>
+                ) : (
+                  <span>
+                    <span className="font-semibold text-foreground">
+                      {allItemsSorted.length}
+                    </span>{" "}
+                    {allItemsSorted.length === 1 ? "task" : "tasks"}
+                    {filterBy !== "all" && (
+                      <span className="ml-1 px-2 py-0.5 rounded-md bg-noki-primary/10 text-noki-primary text-xs font-medium">
+                        {filterBy}
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+
             {isLoading ? (
               <div className="text-center py-8 text-muted-foreground">
                 Loading...
               </div>
             ) : allItemsSorted.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No tasks found
+                {filterBy === "all"
+                  ? "No tasks found"
+                  : `No ${filterBy} tasks found`}
               </div>
             ) : (
               <div className="space-y-3">
-                {allItemsSorted.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border hover:shadow-lg transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
-                    style={{ animationDelay: `${index * 20}ms` }}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div
-                        className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
-                        style={{
-                          backgroundColor: item.parentColorHex || "#6366f1",
-                        }}
-                      ></div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-foreground mb-1 truncate">
-                              {item.title}
-                            </h3>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                              <span className="px-2 py-0.5 rounded-md bg-secondary/50">
-                                {item.parentName}
-                              </span>
-                              {item.parentCode && (
-                                <span className="text-xs">
-                                  {item.parentCode}
-                                </span>
-                              )}
-                              <span>•</span>
-                              <span>{formatDueDate(item.dueDate)}</span>
-                              {item.todos && item.todos.length > 0 && (
-                                <>
-                                  <span>•</span>
-                                  <span>
-                                    {
-                                      item.todos.filter((t) => t.completed)
-                                        .length
-                                    }
-                                    /{item.todos.length} subtasks
+                {allItemsSorted.map((item, index) => {
+                  const itemIsOverdue = isOverdue(item.dueDate, item.completed);
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`bg-card/50 backdrop-blur-sm rounded-xl p-4 border transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 ${
+                        itemIsOverdue
+                          ? "border-red-500/50 hover:shadow-red-500/20 hover:shadow-lg"
+                          : "border-border hover:shadow-lg"
+                      }`}
+                      style={{ animationDelay: `${index * 20}ms` }}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div
+                          className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
+                          style={{
+                            backgroundColor: itemIsOverdue
+                              ? "#ef4444"
+                              : item.parentColorHex || "#6366f1",
+                          }}
+                        ></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3
+                                  className={`font-semibold truncate ${
+                                    itemIsOverdue
+                                      ? "text-red-500"
+                                      : "text-foreground"
+                                  }`}
+                                >
+                                  {item.title}
+                                </h3>
+                                {itemIsOverdue && (
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-red-500/10 text-red-500 rounded-md border border-red-500/20">
+                                    Overdue
                                   </span>
-                                </>
-                              )}
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                                <span className="px-2 py-0.5 rounded-md bg-secondary/50">
+                                  {item.parentName}
+                                </span>
+                                {item.parentCode && (
+                                  <span className="text-xs">
+                                    {item.parentCode}
+                                  </span>
+                                )}
+                                <span>•</span>
+                                <span
+                                  className={
+                                    itemIsOverdue
+                                      ? "text-red-500 font-medium"
+                                      : ""
+                                  }
+                                >
+                                  {formatDueDate(item.dueDate)}
+                                </span>
+                                {item.todos && item.todos.length > 0 && (
+                                  <>
+                                    <span>•</span>
+                                    <span>
+                                      {
+                                        item.todos.filter((t) => t.completed)
+                                          .length
+                                      }
+                                      /{item.todos.length} subtasks
+                                    </span>
+                                  </>
+                                )}
+                              </div>
                             </div>
+                            {item.completed && (
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                              </div>
+                            )}
                           </div>
-                          {item.completed && (
-                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
-                              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

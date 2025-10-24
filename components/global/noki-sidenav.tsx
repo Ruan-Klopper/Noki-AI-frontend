@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -252,8 +253,8 @@ export default function NokiSidenav({
         {/* Footer */}
         <div className="border-t border-border p-3 space-y-3">
           {!isCollapsed && (
-            <p className="px-3 text-xs font-roboto font-semibold text-muted-foreground uppercase tracking-wider">
-              Integrations
+            <p className="px-3 text-xs font-roboto font-semibold text-muted-foreground uppercase tracking-wider pb-2">
+              Integrations test
             </p>
           )}
 
@@ -263,7 +264,13 @@ export default function NokiSidenav({
               isCollapsed ? "justify-center" : ""
             }`}
           >
-            <GraduationCap className="w-5 h-5 flex-shrink-0" />
+            <Image
+              src="/essentials/canvas_icon_white.png"
+              alt="Canvas"
+              width={20}
+              height={20}
+              className="flex-shrink-0"
+            />
             {!isCollapsed && <span className="font-medium">Canvas LMS</span>}
           </Link>
 
@@ -524,7 +531,13 @@ export default function NokiSidenav({
                   onClick={handleMobileLinkClick}
                   className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors font-roboto bg-red-500 text-white hover:bg-red-600"
                 >
-                  <GraduationCap className="w-5 h-5 flex-shrink-0" />
+                  <Image
+                    src="/essentials/canvas_icon_white.png"
+                    alt="Canvas"
+                    width={20}
+                    height={20}
+                    className="flex-shrink-0"
+                  />
                   <span className="font-medium">Canvas LMS test</span>
                 </Link>
 

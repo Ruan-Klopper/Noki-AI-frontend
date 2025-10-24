@@ -136,9 +136,10 @@ export class HttpClient implements HttpService {
     });
   }
 
-  async delete<T>(url: string): Promise<ApiResponse<T>> {
+  async delete<T>(url: string, data?: any): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(url, {
       method: "DELETE",
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
 }

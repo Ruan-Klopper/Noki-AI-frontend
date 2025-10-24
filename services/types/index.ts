@@ -42,7 +42,7 @@ export interface HttpService {
   post<T>(url: string, data?: any): Promise<ApiResponse<T>>;
   put<T>(url: string, data?: any): Promise<ApiResponse<T>>;
   patch<T>(url: string, data?: any): Promise<ApiResponse<T>>;
-  delete<T>(url: string): Promise<ApiResponse<T>>;
+  delete<T>(url: string, data?: any): Promise<ApiResponse<T>>;
 }
 
 // Configuration interface
@@ -58,6 +58,8 @@ export interface ServiceFactory {
   createAuthService(): AuthService;
   createUserService(): UserService;
   createProjectService(): ProjectService;
+  createTaskService(): TaskService;
+  createTodoService(): TodoService;
   createTimetableService(): TimetableService;
   createCanvasService(): CanvasService;
   createMainService(): MainService;
@@ -91,9 +93,29 @@ export interface ProjectService extends BaseService {
   createProject(data: CreateProjectData): Promise<ApiResponse<Project>>;
   updateProject(
     id: string,
-    data: Partial<Project>
+    data: Partial<UpdateProjectData>
   ): Promise<ApiResponse<Project>>;
-  deleteProject(id: string): Promise<ApiResponse<void>>;
+  deleteProject(id: string): Promise<ApiResponse<Project>>;
+}
+
+export interface TaskService extends BaseService {
+  createTask(data: CreateTaskData): Promise<ApiResponse<Task>>;
+  updateTask(
+    id: string,
+    data: Partial<UpdateTaskData>
+  ): Promise<ApiResponse<Task>>;
+  deleteTask(id: string): Promise<ApiResponse<Task>>;
+  completeTask(id: string): Promise<ApiResponse<Task>>;
+}
+
+export interface TodoService extends BaseService {
+  createTodo(taskId: string, data: CreateTodoData): Promise<ApiResponse<Todo>>;
+  updateTodos(
+    todoIds: string[],
+    updates: Partial<UpdateTodoData>
+  ): Promise<ApiResponse<UpdateTodosResponse>>;
+  deleteTodos(todoIds: string[]): Promise<ApiResponse<DeleteTodosResponse>>;
+  completeTodo(id: string): Promise<ApiResponse<Todo>>;
 }
 
 export interface TimetableService extends BaseService {
@@ -148,20 +170,162 @@ export interface GoogleTokenRequest {
   idToken: string;
 }
 
+// Enums
+export type ProjectSource = "Personal" | "Canvas";
+export type TaskType = "Personal" | "Project" | "Canvas";
+export type Priority = "High" | "Medium" | "Low";
+
+// User type (simplified)
+export interface User {
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+}
+
+// Resource type
+export interface Resource {
+  id: string;
+  title: string;
+  description?: string;
+  url?: string;
+  file_path?: string;
+  resource_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Project types
 export interface Project {
   id: string;
-  name: string;
+  user_id: string;
+  title: string;
   description?: string;
-  color: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
+  source: ProjectSource;
+  external_id?: string;
+  course_code?: string;
+  color_hex?: string;
+  time_zone?: string;
+  start_at?: string;
+  end_at?: string;
+  raw_canvas_data?: any;
+  created_at: string;
+  updated_at: string;
+  tasks?: Task[];
+  resources?: Resource[];
 }
 
 export interface CreateProjectData {
-  name: string;
+  title: string;
   description?: string;
-  color: string;
+  source?: ProjectSource;
+  external_id?: string;
+  course_code?: string;
+  color_hex?: string;
+  time_zone?: string;
+  start_at?: string;
+  end_at?: string;
+  raw_canvas_data?: any;
+}
+
+export interface UpdateProjectData {
+  title?: string;
+  description?: string;
+  source?: ProjectSource;
+  external_id?: string;
+  course_code?: string;
+  color_hex?: string;
+  time_zone?: string;
+  start_at?: string;
+  end_at?: string;
+  raw_canvas_data?: any;
+}
+
+// Task types
+export interface Task {
+  id: string;
+  user_id: string;
+  project_id?: string;
+  title: string;
+  description?: string;
+  type: TaskType;
+  due_date?: string;
+  is_all_day: boolean;
+  is_submitted: boolean;
+  priority?: Priority;
+  raw_canvas_data?: any;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+  project?: Project;
+  todos?: Todo[];
+  resources?: Resource[];
+}
+
+export interface CreateTaskData {
+  title: string;
+  type: TaskType;
+  description?: string;
+  project_id?: string;
+  due_date?: string;
+  is_all_day?: boolean;
+  is_submitted?: boolean;
+  priority?: Priority;
+  raw_canvas_data?: any;
+}
+
+export interface UpdateTaskData {
+  title?: string;
+  description?: string;
+  due_date?: string;
+  is_submitted?: boolean;
+  priority?: Priority;
+  raw_canvas_data?: any;
+}
+
+// Todo types
+export interface Todo {
+  id: string;
+  user_id: string;
+  task_id: string;
+  title: string;
+  description?: string;
+  priority?: Priority;
+  due_date?: string;
+  is_all_day: boolean;
+  is_submitted: boolean;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+  task?: Task;
+}
+
+export interface CreateTodoData {
+  title: string;
+  description?: string;
+  priority?: Priority;
+  due_date?: string;
+  is_all_day?: boolean;
+  is_submitted?: boolean;
+}
+
+export interface UpdateTodoData {
+  title?: string;
+  description?: string;
+  priority?: Priority;
+  due_date?: string;
+  is_all_day?: boolean;
+  is_submitted?: boolean;
+}
+
+export interface UpdateTodosResponse {
+  updated: number;
+  todos: Todo[];
+}
+
+export interface DeleteTodosResponse {
+  deleted: number;
+  todoIds: string[];
 }
 
 export interface Timetable {

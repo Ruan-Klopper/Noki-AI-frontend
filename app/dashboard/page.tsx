@@ -11,6 +11,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { ManageProjectsModal } from "@/components/global/manage-projects-modal";
 
@@ -132,7 +133,7 @@ export default function DashboardPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
         <div className="absolute inset-0 p-8 flex flex-col justify-end">
           <div className="text-white space-y-2 max-w-2xl">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-5">
               <Sparkles className="text-yellow-300" size={20} />
               <span className="text-xs font-semibold bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
                 Keep it up!
@@ -156,9 +157,9 @@ export default function DashboardPage() {
               <div className="w-10 h-10 bg-noki-tertiary/10 rounded-xl flex items-center justify-center">
                 <Target className="text-noki-tertiary" size={20} />
               </div>
-              <h2 className="text-xl font-poppins font-bold text-foreground">
+              <div className="text-xl font-poppins font-bold text-foreground">
                 Upcoming Tasks
-              </h2>
+              </div>
             </div>
             <button className="text-xs text-noki-primary hover:text-noki-primary/80 font-semibold transition-colors">
               View all →
@@ -226,9 +227,9 @@ export default function DashboardPage() {
             <div className="w-10 h-10 bg-noki-primary/10 rounded-xl flex items-center justify-center">
               <Zap className="text-noki-primary" size={20} />
             </div>
-            <h2 className="text-xl font-poppins font-bold text-foreground">
+            <div className="text-xl font-poppins font-bold text-foreground">
               Quick Actions
-            </h2>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -276,11 +277,16 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                <BookOpen className="text-blue-500" size={20} />
+                <Image
+                  src="/essentials/canvas_icon_white.png"
+                  alt="Canvas"
+                  width={20}
+                  height={20}
+                />
               </div>
-              <h2 className="text-xl font-poppins font-bold text-foreground">
+              <div className="text-xl font-poppins font-bold text-foreground">
                 Courses
-              </h2>
+              </div>
             </div>
             <Link href="/projects">
               <button className="text-xs text-noki-primary hover:text-noki-primary/80 font-semibold transition-colors">
@@ -319,9 +325,9 @@ export default function DashboardPage() {
               <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
                 <FolderKanban className="text-orange-500" size={20} />
               </div>
-              <h2 className="text-xl font-poppins font-bold text-foreground">
+              <div className="text-xl font-poppins font-bold text-foreground">
                 Projects
-              </h2>
+              </div>
             </div>
             <Link href="/projects">
               <button className="text-xs text-noki-primary hover:text-noki-primary/80 font-semibold transition-colors">

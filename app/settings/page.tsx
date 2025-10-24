@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { NokiCard } from "@/components/global/noki-card"
+import { useState } from "react";
+import { NokiCard } from "@/components/global/noki-card";
 import {
   User,
   Mail,
@@ -20,52 +20,59 @@ import {
   EyeOff,
   Edit2,
   Link,
-} from "lucide-react"
+} from "lucide-react";
 
 export default function SettingsPage() {
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showAccountDeleteConfirm, setShowAccountDeleteConfirm] = useState(false)
-  const [showToken, setShowToken] = useState(false)
-  const [isEditingToken, setIsEditingToken] = useState(false)
-  const [canvasToken, setCanvasToken] = useState("1234~abcdefghijklmnopqrstuvwxyz1234567890")
-  const [canvasUrl, setCanvasUrl] = useState("https://canvas.institution.edu")
-  const [tempToken, setTempToken] = useState(canvasToken)
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAccountDeleteConfirm, setShowAccountDeleteConfirm] =
+    useState(false);
+  const [showToken, setShowToken] = useState(false);
+  const [isEditingToken, setIsEditingToken] = useState(false);
+  const [canvasToken, setCanvasToken] = useState(
+    "1234~abcdefghijklmnopqrstuvwxyz1234567890"
+  );
+  const [canvasUrl, setCanvasUrl] = useState("https://canvas.institution.edu");
+  const [tempToken, setTempToken] = useState(canvasToken);
 
   const handleSync = () => {
-    setIsSyncing(true)
+    setIsSyncing(true);
     // Simulate sync
     setTimeout(() => {
-      setIsSyncing(false)
-    }, 2000)
-  }
+      setIsSyncing(false);
+    }, 2000);
+  };
 
   const handleDeleteCanvasData = () => {
-    setShowDeleteConfirm(false)
+    setShowDeleteConfirm(false);
     // Handle delete canvas data
-  }
+  };
 
   const handleDeleteAccount = () => {
-    setShowAccountDeleteConfirm(false)
+    setShowAccountDeleteConfirm(false);
     // Handle account deletion
-  }
+  };
 
   const handleSaveToken = () => {
-    setCanvasToken(tempToken)
-    setIsEditingToken(false)
+    setCanvasToken(tempToken);
+    setIsEditingToken(false);
     // Here you would typically make an API call to update the token
-  }
+  };
 
   const handleCancelEdit = () => {
-    setTempToken(canvasToken)
-    setIsEditingToken(false)
-  }
+    setTempToken(canvasToken);
+    setIsEditingToken(false);
+  };
 
   return (
     <div className="space-y-8 max-w-5xl">
       <div>
-        <h1 className="text-3xl font-poppins font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-2">Manage your account and preferences</p>
+        <h1 className="text-3xl font-poppins font-bold text-foreground">
+          Settings
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Manage your account and preferences
+        </p>
       </div>
 
       {/* Personal Information */}
@@ -75,34 +82,46 @@ export default function SettingsPage() {
             <div className="w-10 h-10 bg-noki-primary/10 rounded-xl flex items-center justify-center">
               <User className="text-noki-primary" size={20} />
             </div>
-            <h2 className="text-xl font-poppins font-semibold text-foreground">Personal Information</h2>
+            <div className="text-xl font-poppins font-semibold text-foreground">
+              Personal Information
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Full Name</label>
+              <label className="text-sm font-medium text-muted-foreground">
+                Full Name
+              </label>
               <div className="bg-secondary p-3 rounded-lg">
                 <p className="text-foreground font-medium">Ruan Student</p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Email Address</label>
+              <label className="text-sm font-medium text-muted-foreground">
+                Email Address
+              </label>
               <div className="bg-secondary p-3 rounded-lg flex items-center gap-2">
                 <Mail size={16} className="text-muted-foreground" />
-                <p className="text-foreground font-medium">student@example.com</p>
+                <p className="text-foreground font-medium">
+                  student@example.com
+                </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Student ID</label>
+              <label className="text-sm font-medium text-muted-foreground">
+                Student ID
+              </label>
               <div className="bg-secondary p-3 rounded-lg">
                 <p className="text-foreground font-medium">STU123456</p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Account Type</label>
+              <label className="text-sm font-medium text-muted-foreground">
+                Account Type
+              </label>
               <div className="bg-secondary p-3 rounded-lg flex items-center gap-2">
                 <Shield size={16} className="text-muted-foreground" />
                 <p className="text-foreground font-medium">Free Plan</p>
@@ -123,7 +142,9 @@ export default function SettingsPage() {
             <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
               <GraduationCap className="text-red-500" size={20} />
             </div>
-            <h2 className="text-xl font-poppins font-semibold text-foreground">Canvas LMS Integration</h2>
+            <div className="text-xl font-poppins font-semibold text-foreground">
+              Canvas LMS Integration
+            </div>
           </div>
 
           <div className="bg-secondary p-4 rounded-lg space-y-4">
@@ -132,7 +153,9 @@ export default function SettingsPage() {
                 <CheckCircle2 className="text-green-500" size={20} />
                 <div>
                   <p className="font-medium text-foreground">Connected</p>
-                  <p className="text-sm text-muted-foreground">Your Canvas account is linked</p>
+                  <p className="text-sm text-muted-foreground">
+                    Your Canvas account is linked
+                  </p>
                 </div>
               </div>
             </div>
@@ -144,7 +167,9 @@ export default function SettingsPage() {
                   Institution URL
                 </label>
                 <div className="bg-background p-3 rounded-lg">
-                  <p className="text-foreground font-mono text-sm">{canvasUrl}</p>
+                  <p className="text-foreground font-mono text-sm">
+                    {canvasUrl}
+                  </p>
                 </div>
               </div>
 
@@ -156,7 +181,9 @@ export default function SettingsPage() {
                 {!isEditingToken ? (
                   <div className="bg-background p-3 rounded-lg flex items-center justify-between gap-3">
                     <p className="text-foreground font-mono text-sm flex-1 overflow-hidden">
-                      {showToken ? canvasToken : "••••••••••••••••••••••••••••••••"}
+                      {showToken
+                        ? canvasToken
+                        : "••••••••••••••••••••••••••••••••"}
                     </p>
                     <div className="flex items-center gap-2">
                       <button
@@ -219,7 +246,10 @@ export default function SettingsPage() {
                   disabled={isSyncing}
                   className="flex items-center gap-2 bg-noki-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-noki-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
+                  <RefreshCw
+                    size={16}
+                    className={isSyncing ? "animate-spin" : ""}
+                  />
                   {isSyncing ? "Syncing..." : "Sync Now"}
                 </button>
 
@@ -238,12 +268,15 @@ export default function SettingsPage() {
           {showDeleteConfirm && (
             <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg space-y-3">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+                <AlertTriangle
+                  className="text-red-500 flex-shrink-0 mt-0.5"
+                  size={20}
+                />
                 <div className="space-y-2 flex-1">
                   <p className="font-medium text-foreground">Are you sure?</p>
                   <p className="text-sm text-muted-foreground">
-                    This will permanently delete all your Canvas courses, assignments, and related data. This action
-                    cannot be undone.
+                    This will permanently delete all your Canvas courses,
+                    assignments, and related data. This action cannot be undone.
                   </p>
                   <div className="flex gap-3 pt-2">
                     <button
@@ -273,39 +306,62 @@ export default function SettingsPage() {
             <div className="w-10 h-10 bg-noki-tertiary/10 rounded-xl flex items-center justify-center">
               <Zap className="text-noki-tertiary" size={20} />
             </div>
-            <h2 className="text-xl font-poppins font-semibold text-foreground">AI Usage</h2>
+            <div className="text-xl font-poppins font-semibold text-foreground">
+              AI Usage
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gradient-to-br from-noki-primary/10 to-noki-tertiary/10 p-6 rounded-xl border border-border">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-muted-foreground">AI Tokens Remaining</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  AI Tokens Remaining
+                </p>
                 <Zap className="text-noki-primary" size={18} />
               </div>
-              <p className="text-3xl font-poppins font-bold text-foreground">2,450</p>
-              <p className="text-xs text-muted-foreground mt-1">of 5,000 tokens</p>
+              <p className="text-3xl font-poppins font-bold text-foreground">
+                2,450
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                of 5,000 tokens
+              </p>
               <div className="w-full bg-secondary rounded-full h-2 mt-3">
-                <div className="bg-noki-primary h-2 rounded-full" style={{ width: "49%" }}></div>
+                <div
+                  className="bg-noki-primary h-2 rounded-full"
+                  style={{ width: "49%" }}
+                ></div>
               </div>
             </div>
 
             <div className="bg-gradient-to-br from-noki-tertiary/10 to-purple-500/10 p-6 rounded-xl border border-border">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-muted-foreground">This Month's Usage</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  This Month's Usage
+                </p>
                 <TrendingUp className="text-noki-tertiary" size={18} />
               </div>
-              <p className="text-3xl font-poppins font-bold text-foreground">2,550</p>
+              <p className="text-3xl font-poppins font-bold text-foreground">
+                2,550
+              </p>
               <p className="text-xs text-muted-foreground mt-1">tokens used</p>
-              <p className="text-xs text-green-500 mt-2">↑ 12% from last month</p>
+              <p className="text-xs text-green-500 mt-2">
+                ↑ 12% from last month
+              </p>
             </div>
           </div>
 
           <div className="bg-secondary p-4 rounded-lg">
-            <h3 className="font-medium text-foreground mb-3">Recent AI Activity</h3>
+            <h3 className="font-medium text-foreground mb-3">
+              Recent AI Activity
+            </h3>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Chat conversations</span>
-                <span className="text-foreground font-medium">1,200 tokens</span>
+                <span className="text-muted-foreground">
+                  Chat conversations
+                </span>
+                <span className="text-foreground font-medium">
+                  1,200 tokens
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Assignment help</span>
@@ -327,25 +383,41 @@ export default function SettingsPage() {
             <div className="w-10 h-10 bg-gradient-to-br from-noki-primary to-noki-tertiary rounded-xl flex items-center justify-center">
               <Crown className="text-white" size={20} />
             </div>
-            <h2 className="text-xl font-poppins font-semibold text-foreground">Upgrade to Premium</h2>
+            <div className="text-xl font-poppins font-semibold text-foreground">
+              Upgrade to Premium
+            </div>
           </div>
 
           <p className="text-muted-foreground">
-            Unlock unlimited AI tokens, advanced features, priority support, and more with Noki Premium.
+            Unlock unlimited AI tokens, advanced features, priority support, and
+            more with Noki Premium.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="text-noki-primary flex-shrink-0" size={20} />
-              <span className="text-sm text-foreground">Unlimited AI tokens</span>
+              <CheckCircle2
+                className="text-noki-primary flex-shrink-0"
+                size={20}
+              />
+              <span className="text-sm text-foreground">
+                Unlimited AI tokens
+              </span>
             </div>
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="text-noki-primary flex-shrink-0" size={20} />
+              <CheckCircle2
+                className="text-noki-primary flex-shrink-0"
+                size={20}
+              />
               <span className="text-sm text-foreground">Priority support</span>
             </div>
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="text-noki-primary flex-shrink-0" size={20} />
-              <span className="text-sm text-foreground">Advanced analytics</span>
+              <CheckCircle2
+                className="text-noki-primary flex-shrink-0"
+                size={20}
+              />
+              <span className="text-sm text-foreground">
+                Advanced analytics
+              </span>
             </div>
           </div>
 
@@ -362,16 +434,23 @@ export default function SettingsPage() {
             <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
               <Shield className="text-orange-500" size={20} />
             </div>
-            <h2 className="text-xl font-poppins font-semibold text-foreground">Account Actions</h2>
+            <div className="text-xl font-poppins font-semibold text-foreground">
+              Account Actions
+            </div>
           </div>
 
           <div className="space-y-3">
             <button className="w-full flex items-center justify-between p-4 bg-secondary hover:bg-muted rounded-lg transition-colors group">
               <div className="flex items-center gap-3">
-                <LogOut className="text-muted-foreground group-hover:text-foreground transition-colors" size={20} />
+                <LogOut
+                  className="text-muted-foreground group-hover:text-foreground transition-colors"
+                  size={20}
+                />
                 <div className="text-left">
                   <p className="font-medium text-foreground">Logout</p>
-                  <p className="text-sm text-muted-foreground">Sign out of your account</p>
+                  <p className="text-sm text-muted-foreground">
+                    Sign out of your account
+                  </p>
                 </div>
               </div>
             </button>
@@ -384,7 +463,9 @@ export default function SettingsPage() {
                 <Trash2 className="text-red-500" size={20} />
                 <div className="text-left">
                   <p className="font-medium text-red-500">Delete Account</p>
-                  <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete your account and all data
+                  </p>
                 </div>
               </div>
             </button>
@@ -394,12 +475,18 @@ export default function SettingsPage() {
           {showAccountDeleteConfirm && (
             <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg space-y-3">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+                <AlertTriangle
+                  className="text-red-500 flex-shrink-0 mt-0.5"
+                  size={20}
+                />
                 <div className="space-y-2 flex-1">
-                  <p className="font-medium text-foreground">Delete Your Account?</p>
+                  <p className="font-medium text-foreground">
+                    Delete Your Account?
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    This will permanently delete your account, all your projects, tasks, todos, and Canvas data. This
-                    action cannot be undone and you will lose access immediately.
+                    This will permanently delete your account, all your
+                    projects, tasks, todos, and Canvas data. This action cannot
+                    be undone and you will lose access immediately.
                   </p>
                   <div className="flex gap-3 pt-2">
                     <button
@@ -422,5 +509,5 @@ export default function SettingsPage() {
         </div>
       </NokiCard>
     </div>
-  )
+  );
 }

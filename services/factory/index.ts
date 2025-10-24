@@ -3,6 +3,8 @@ import {
   AuthService,
   UserService,
   ProjectService,
+  TaskService,
+  TodoService,
   TimetableService,
   CanvasService,
   MainService,
@@ -11,6 +13,8 @@ import { HttpClient, createHttpClient } from "../http";
 import { AuthServiceImpl } from "../auth/auth.service";
 import { UserServiceImpl } from "../user/user.service";
 import { ProjectServiceImpl } from "../project/project.service";
+import { TaskServiceImpl } from "../task/task.service";
+import { TodoServiceImpl } from "../todo/todo.service";
 import { TimetableServiceImpl } from "../timetable/timetable.service";
 import { CanvasServiceImpl } from "../canvas/canvas.service";
 import { MainServiceImpl } from "../main/main.service";
@@ -33,6 +37,14 @@ export class ServiceFactoryImpl implements ServiceFactory {
 
   createProjectService(): ProjectService {
     return new ProjectServiceImpl(this.httpClient);
+  }
+
+  createTaskService(): TaskService {
+    return new TaskServiceImpl(this.httpClient);
+  }
+
+  createTodoService(): TodoService {
+    return new TodoServiceImpl(this.httpClient);
   }
 
   createTimetableService(): TimetableService {
@@ -92,4 +104,12 @@ export const getCanvasService = (): CanvasService => {
 
 export const getMainService = (): MainService => {
   return getServiceFactory().createMainService();
+};
+
+export const getTaskService = (): TaskService => {
+  return getServiceFactory().createTaskService();
+};
+
+export const getTodoService = (): TodoService => {
+  return getServiceFactory().createTodoService();
 };

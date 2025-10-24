@@ -172,7 +172,7 @@
 
   /* Set paragraphs to have minimal line-height and no margins/padding */
   p {
-    margin-top: 2px !important;
-    margin-bottom: 2px !important;
+    margin-top: 3px !important;
+    margin-bottom: 1px !important;
   }
 }

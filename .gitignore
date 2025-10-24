@@ -159,3 +159,10 @@ Thumbs.db
 # Build outputs
 build/
 dist/
+services/ENHANCED_HOOKS_SUMMARY.md
+services/CRUD_OPERATIONS.md
+services/HOOKS_WITH_NOTIFICATIONS.md
+services/IMPLEMENTATION_SUMMARY.md
+services/QUICK_REFERENCE.md
+services/SERVICES_README.md
+services/USAGE_EXAMPLES.tsx

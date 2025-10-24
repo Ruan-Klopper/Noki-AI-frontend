@@ -9,6 +9,8 @@ export * from "./hooks";
 export { AuthServiceImpl } from "./auth/auth.service";
 export { UserServiceImpl } from "./user/user.service";
 export { ProjectServiceImpl } from "./project/project.service";
+export { TaskServiceImpl } from "./task/task.service";
+export { TodoServiceImpl } from "./todo/todo.service";
 export { TimetableServiceImpl } from "./timetable/timetable.service";
 export { CanvasServiceImpl } from "./canvas/canvas.service";
 export { MainServiceImpl } from "./main/main.service";
@@ -30,6 +32,8 @@ export {
   getAuthService,
   getUserService,
   getProjectService,
+  getTaskService,
+  getTodoService,
   getTimetableService,
   getCanvasService,
   getMainService,

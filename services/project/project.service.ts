@@ -2,6 +2,7 @@ import {
   ProjectService,
   Project,
   CreateProjectData,
+  UpdateProjectData,
   PaginationParams,
   PaginatedResponse,
   ApiResponse,
@@ -30,18 +31,26 @@ export class ProjectServiceImpl implements ProjectService {
   }
 
   async createProject(data: CreateProjectData): Promise<ApiResponse<Project>> {
-    return this.httpClient.post<Project>(this.baseUrl, data);
+    return this.httpClient.post<Project>(
+      `${this.baseUrl}/create_project`,
+      data
+    );
   }
 
   async updateProject(
     id: string,
-    data: Partial<Project>
+    data: Partial<UpdateProjectData>
   ): Promise<ApiResponse<Project>> {
-    return this.httpClient.patch<Project>(`${this.baseUrl}/${id}`, data);
+    return this.httpClient.put<Project>(
+      `${this.baseUrl}/update_project/${id}`,
+      data
+    );
   }
 
-  async deleteProject(id: string): Promise<ApiResponse<void>> {
-    return this.httpClient.delete<void>(`${this.baseUrl}/${id}`);
+  async deleteProject(id: string): Promise<ApiResponse<Project>> {
+    return this.httpClient.delete<Project>(
+      `${this.baseUrl}/delete_project/${id}`
+    );
   }
 
   async duplicateProject(id: string): Promise<ApiResponse<Project>> {

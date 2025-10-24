@@ -3,11 +3,14 @@ import {
   ProjectService,
   Project,
   CreateProjectData,
+  UpdateProjectData,
   PaginationParams,
   PaginatedResponse,
   ApiResponse,
 } from "../types";
 import { getProjectService } from "../index";
+import { notificationService } from "../notification/notification.service";
+import { getIndexedDBService } from "../storage/indexeddb.service";
 
 // Project hook for managing project state
 export const useProjects = () => {
@@ -19,6 +22,7 @@ export const useProjects = () => {
   >(null);
 
   const projectService = getProjectService();
+  const dbService = getIndexedDBService();
 
   const fetchProjects = useCallback(
     async (params?: PaginationParams): Promise<void> => {
@@ -47,49 +51,103 @@ export const useProjects = () => {
       setIsLoading(true);
       setError(null);
 
+      // Show loading notification
+      const loadingKey = `create-project-${Date.now()}`;
+      notificationService.info("Creating project...", "Please wait", 0);
+
       try {
         const response = await projectService.createProject(data);
+
+        // Destroy loading notification
+        notificationService.destroy();
+
         if (response.success) {
+          // Update IndexedDB
+          await dbService.saveProject(response.data);
+
+          // Update local state
           setProjects((prev) => [response.data, ...prev]);
+
+          // Show success notification
+          notificationService.success(
+            "Project created!",
+            `${response.data.title} has been created successfully`
+          );
+
           return response.data;
         }
+
+        notificationService.error(
+          "Failed to create project",
+          response.message || "Please try again"
+        );
         return null;
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to create project"
-        );
+        notificationService.destroy();
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to create project";
+        setError(errorMessage);
+        notificationService.error("Error", errorMessage);
         return null;
       } finally {
         setIsLoading(false);
       }
     },
-    [projectService]
+    [projectService, dbService]
   );
 
   const updateProject = useCallback(
-    async (id: string, data: Partial<Project>): Promise<Project | null> => {
+    async (
+      id: string,
+      data: Partial<UpdateProjectData>
+    ): Promise<Project | null> => {
       setIsLoading(true);
       setError(null);
 
+      // Show loading notification
+      notificationService.info("Updating project...", "Please wait", 0);
+
       try {
         const response = await projectService.updateProject(id, data);
+
+        // Destroy loading notification
+        notificationService.destroy();
+
         if (response.success) {
+          // Update IndexedDB
+          await dbService.saveProject(response.data);
+
+          // Update local state
           setProjects((prev) =>
             prev.map((project) => (project.id === id ? response.data : project))
           );
+
+          // Show success notification
+          notificationService.success(
+            "Project updated!",
+            `${response.data.title} has been updated successfully`
+          );
+
           return response.data;
         }
+
+        notificationService.error(
+          "Failed to update project",
+          response.message || "Please try again"
+        );
         return null;
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to update project"
-        );
+        notificationService.destroy();
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to update project";
+        setError(errorMessage);
+        notificationService.error("Error", errorMessage);
         return null;
       } finally {
         setIsLoading(false);
       }
     },
-    [projectService]
+    [projectService, dbService]
   );
 
   const deleteProject = useCallback(
@@ -97,23 +155,48 @@ export const useProjects = () => {
       setIsLoading(true);
       setError(null);
 
+      // Show loading notification
+      notificationService.info("Deleting project...", "Please wait", 0);
+
       try {
         const response = await projectService.deleteProject(id);
+
+        // Destroy loading notification
+        notificationService.destroy();
+
         if (response.success) {
+          // Delete from IndexedDB
+          await dbService.deleteProject(id);
+
+          // Update local state
           setProjects((prev) => prev.filter((project) => project.id !== id));
+
+          // Show success notification
+          notificationService.success(
+            "Project deleted!",
+            `${response.data.title} has been deleted successfully`
+          );
+
           return true;
         }
+
+        notificationService.error(
+          "Failed to delete project",
+          response.message || "Please try again"
+        );
         return false;
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to delete project"
-        );
+        notificationService.destroy();
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to delete project";
+        setError(errorMessage);
+        notificationService.error("Error", errorMessage);
         return false;
       } finally {
         setIsLoading(false);
       }
     },
-    [projectService]
+    [projectService, dbService]
   );
 
   const getProject = useCallback(
