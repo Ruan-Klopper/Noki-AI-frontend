@@ -301,7 +301,7 @@ export default function NokiSidenav({
 
             <button
               onClick={handleLogout}
-              className={`w-full flex items-center gap-3 px-2 py-2 rounded-md transition-colors font-roboto text-foreground hover:bg-muted ${
+              className={`w-full flex items-center gap-3 px-2 py-2 rounded-md transition-colors font-roboto text-foreground hover:bg-muted hover:text-red-500 cursor-pointer ${
                 isCollapsed ? "justify-center" : ""
               }`}
             >
@@ -564,7 +564,7 @@ export default function NokiSidenav({
 
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-2 py-2 rounded-md transition-colors font-roboto text-foreground hover:bg-muted"
+                    className="w-full flex items-center gap-3 px-2 py-2 rounded-md transition-colors font-roboto text-foreground hover:bg-muted hover:text-red-500 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm">Logout</span>

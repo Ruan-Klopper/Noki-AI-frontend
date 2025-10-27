@@ -28,6 +28,14 @@ export class IndexedDBService {
    * Initialize and open the database
    */
   async init(): Promise<void> {
+    // Check if we're in a browser environment
+    if (typeof window === "undefined" || typeof indexedDB === "undefined") {
+      console.warn(
+        "[IndexedDB] Not in browser environment, skipping initialization"
+      );
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.version);
 

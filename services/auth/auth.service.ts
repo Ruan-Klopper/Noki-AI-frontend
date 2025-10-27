@@ -8,6 +8,7 @@ import {
 } from "../types";
 import { HttpClient } from "../http";
 import { CookieManager } from "../config/cookie-manager";
+import { getIndexedDBService } from "../storage/indexeddb.service";
 
 // Auth Service implementation following Single Responsibility Principle
 export class AuthServiceImpl implements AuthService {
@@ -57,19 +58,49 @@ export class AuthServiceImpl implements AuthService {
   }
 
   async logout(): Promise<ApiResponse<void>> {
+    console.log("[Auth] Logging out - clearing local data...");
+
     try {
-      const response = await this.httpClient.post<void>(
-        `${this.baseUrl}/logout`
-      );
-
-      // Clear all auth data regardless of API response
+      // Clear all auth data (cookies and tokens)
       CookieManager.clearAllAuthData();
+      console.log("[Auth] ✓ Cookies and tokens cleared");
 
-      return response;
+      // Clear IndexedDB data
+      try {
+        const indexedDBService = getIndexedDBService();
+        await indexedDBService.clearAll();
+        console.log("[Auth] ✓ IndexedDB cleared");
+      } catch (dbError) {
+        console.error("[Auth] ✗ Failed to clear IndexedDB:", dbError);
+      }
+
+      // Return success response without calling backend
+      return {
+        success: true,
+        status: 200,
+        message: "Logout successful",
+        data: undefined,
+      };
     } catch (error) {
-      // Clear auth data even if logout fails
+      console.error("[Auth] Error during logout:", error);
+
+      // Still try to clear data even if something fails
       CookieManager.clearAllAuthData();
-      throw error;
+
+      try {
+        const indexedDBService = getIndexedDBService();
+        await indexedDBService.clearAll();
+      } catch (dbError) {
+        console.error("[Auth] Failed to clear IndexedDB:", dbError);
+      }
+
+      // Return success anyway since we cleared local data
+      return {
+        success: true,
+        status: 200,
+        message: "Logout successful (with errors)",
+        data: undefined,
+      };
     }
   }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   ProjectService,
   Project,
@@ -222,10 +222,8 @@ export const useProjects = () => {
     [projectService]
   );
 
-  // Load projects on mount
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+  // Note: Auto-fetch removed to prevent infinite loops when used in components
+  // Components should manually call fetchProjects() if needed
 
   return {
     projects,

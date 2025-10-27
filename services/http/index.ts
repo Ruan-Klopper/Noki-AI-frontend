@@ -42,10 +42,18 @@ export class HttpClient implements HttpService {
       ...options.headers,
     };
 
+    console.log(`[HTTP Client] Full URL: ${fullUrl}`);
+    console.log(`[HTTP Client] Method: ${options.method}`);
+    console.log(`[HTTP Client] Headers:`, defaultHeaders);
+
     const makeRequest = async (): Promise<ApiResponse<T>> => {
       // Create AbortController for timeout (fresh for each attempt)
       const controller = new AbortController();
       const timeoutMs = this.config.timeout;
+
+      console.log(
+        `[HTTP Client] Making ${options.method} request to ${fullUrl} with timeout: ${timeoutMs}ms`
+      );
 
       // Debug log for Canvas endpoints
       if (fullUrl.includes("/canvas/")) {
@@ -70,8 +78,15 @@ export class HttpClient implements HttpService {
       };
 
       try {
+        console.log(`[HTTP Client] Fetching: ${fullUrl}`);
         const response = await fetch(fullUrl, requestOptions);
         clearTimeout(timeoutId);
+
+        console.log(`[HTTP Client] Response received from ${fullUrl}:`, {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+        });
 
         if (fullUrl.includes("/canvas/")) {
           console.log(
@@ -79,9 +94,17 @@ export class HttpClient implements HttpService {
           );
         }
 
-        return handleApiResponse(response) as Promise<ApiResponse<T>>;
+        const result = (await handleApiResponse(response)) as ApiResponse<T>;
+        console.log(`[HTTP Client] Parsed response:`, result);
+        return result;
       } catch (error) {
         clearTimeout(timeoutId);
+
+        console.error(`[HTTP Client] ERROR in request to ${fullUrl}:`, {
+          error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+        });
 
         if (fullUrl.includes("/canvas/")) {
           console.error(`[HTTP Client] Request to ${fullUrl} failed:`, error);
@@ -116,17 +139,23 @@ export class HttpClient implements HttpService {
   }
 
   async post<T>(url: string, data?: any): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(url, {
+    console.log(`[HTTP Client] POST request to: ${url}`, { data });
+    const result = await this.makeRequest<T>(url, {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     });
+    console.log(`[HTTP Client] POST response from: ${url}`, result);
+    return result;
   }
 
   async put<T>(url: string, data?: any): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(url, {
+    console.log(`[HTTP Client] PUT request to: ${url}`, { data });
+    const result = await this.makeRequest<T>(url, {
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     });
+    console.log(`[HTTP Client] PUT response from: ${url}`, result);
+    return result;
   }
 
   async patch<T>(url: string, data?: any): Promise<ApiResponse<T>> {
@@ -137,10 +166,13 @@ export class HttpClient implements HttpService {
   }
 
   async delete<T>(url: string, data?: any): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(url, {
+    console.log(`[HTTP Client] DELETE request to: ${url}`, { data });
+    const result = await this.makeRequest<T>(url, {
       method: "DELETE",
       body: data ? JSON.stringify(data) : undefined,
     });
+    console.log(`[HTTP Client] DELETE response from: ${url}`, result);
+    return result;
   }
 }
 
