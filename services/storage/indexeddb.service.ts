@@ -9,6 +9,8 @@
  * Provides CRUD operations with indexing and querying capabilities
  */
 
+import { DEBUG_MODE } from "../config";
+
 export interface DBSchema {
   projects: any[];
   tasks: any[];
@@ -46,13 +48,17 @@ export class IndexedDBService {
 
       request.onsuccess = () => {
         this.db = request.result;
-        console.log("[IndexedDB] Database opened successfully");
+        if (DEBUG_MODE) {
+          console.log("[IndexedDB] Database opened successfully");
+        }
         resolve();
       };
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        console.log("[IndexedDB] Upgrading database schema...");
+        if (DEBUG_MODE) {
+          console.log("[IndexedDB] Upgrading database schema...");
+        }
 
         // Create object stores if they don't exist
         if (!db.objectStoreNames.contains("projects")) {
@@ -64,7 +70,9 @@ export class IndexedDBService {
             unique: false,
           });
           projectStore.createIndex("source", "source", { unique: false });
-          console.log("[IndexedDB] Created projects store");
+          if (DEBUG_MODE) {
+            console.log("[IndexedDB] Created projects store");
+          }
         }
 
         if (!db.objectStoreNames.contains("tasks")) {
@@ -76,7 +84,9 @@ export class IndexedDBService {
           taskStore.createIndex("is_submitted", "is_submitted", {
             unique: false,
           });
-          console.log("[IndexedDB] Created tasks store");
+          if (DEBUG_MODE) {
+            console.log("[IndexedDB] Created tasks store");
+          }
         }
 
         if (!db.objectStoreNames.contains("todos")) {
@@ -87,12 +97,16 @@ export class IndexedDBService {
           todoStore.createIndex("is_submitted", "is_submitted", {
             unique: false,
           });
-          console.log("[IndexedDB] Created todos store");
+          if (DEBUG_MODE) {
+            console.log("[IndexedDB] Created todos store");
+          }
         }
 
         if (!db.objectStoreNames.contains("metadata")) {
           db.createObjectStore("metadata", { keyPath: "key" });
-          console.log("[IndexedDB] Created metadata store");
+          if (DEBUG_MODE) {
+            console.log("[IndexedDB] Created metadata store");
+          }
         }
       };
     });
@@ -123,21 +137,12 @@ export class IndexedDBService {
   }): Promise<void> {
     const db = await this.ensureDB();
 
-    console.log("[IndexedDB] storeAllData called with:", {
-      projectsCount: data.projects?.length || 0,
-      tasksCount: data.tasks?.length || 0,
-      todosCount: data.todos?.length || 0,
-    });
-
-    // Log first item of each type to see structure
-    if (data.projects && data.projects.length > 0) {
-      console.log("[IndexedDB] Sample project:", data.projects[0]);
-    }
-    if (data.tasks && data.tasks.length > 0) {
-      console.log("[IndexedDB] Sample task:", data.tasks[0]);
-    }
-    if (data.todos && data.todos.length > 0) {
-      console.log("[IndexedDB] Sample todo:", data.todos[0]);
+    if (DEBUG_MODE) {
+      console.log("[IndexedDB] Storing data:", {
+        projects: data.projects?.length || 0,
+        tasks: data.tasks?.length || 0,
+        todos: data.todos?.length || 0,
+      });
     }
 
     const transaction = db.transaction(
@@ -151,17 +156,18 @@ export class IndexedDBService {
 
     return new Promise((resolve, reject) => {
       transaction.oncomplete = () => {
-        console.log("[IndexedDB] ✅ Transaction completed successfully");
-        console.log("[IndexedDB] Stored counts:", {
-          projects: projectsStored,
-          tasks: tasksStored,
-          todos: todosStored,
-        });
+        if (DEBUG_MODE) {
+          console.log("[IndexedDB] Stored:", {
+            projects: projectsStored,
+            tasks: tasksStored,
+            todos: todosStored,
+          });
+        }
         resolve();
       };
 
       transaction.onerror = () => {
-        console.error("[IndexedDB] ❌ Transaction failed:", transaction.error);
+        console.error("[IndexedDB] Transaction failed:", transaction.error);
         reject(transaction.error);
       };
 
@@ -172,14 +178,12 @@ export class IndexedDBService {
       const metadataStore = transaction.objectStore("metadata");
 
       // Clear stores
-      console.log("[IndexedDB] Clearing existing data...");
       projectsStore.clear();
       tasksStore.clear();
       todosStore.clear();
 
       // Store projects and flatten nested tasks/todos
       if (data.projects) {
-        console.log("[IndexedDB] Processing projects (nested structure)...");
         data.projects.forEach((project, index) => {
           // Extract tasks before storing project
           const tasks = project.tasks || [];
@@ -190,16 +194,13 @@ export class IndexedDBService {
           try {
             projectsStore.add(projectWithoutTasks);
             projectsStored++;
-            console.log(
-              `[IndexedDB] ✓ Stored project ${index + 1}: ${
-                project.name || project.id
-              }`
-            );
           } catch (error) {
-            console.error(
-              `[IndexedDB] ✗ Failed to store project ${index + 1}:`,
-              error
-            );
+            if (DEBUG_MODE) {
+              console.error(
+                `[IndexedDB] Failed to store project ${index + 1}:`,
+                error
+              );
+            }
           }
 
           // Store tasks and flatten nested todos
@@ -212,16 +213,13 @@ export class IndexedDBService {
             try {
               tasksStore.add(taskWithoutTodos);
               tasksStored++;
-              console.log(
-                `[IndexedDB] ✓ Stored task ${taskIndex + 1} for project ${
-                  project.name || project.id
-                }`
-              );
             } catch (error) {
-              console.error(
-                `[IndexedDB] ✗ Failed to store task ${taskIndex + 1}:`,
-                error
-              );
+              if (DEBUG_MODE) {
+                console.error(
+                  `[IndexedDB] Failed to store task ${taskIndex + 1}:`,
+                  error
+                );
+              }
             }
 
             // Store todos
@@ -229,16 +227,13 @@ export class IndexedDBService {
               try {
                 todosStore.add(todo);
                 todosStored++;
-                console.log(
-                  `[IndexedDB] ✓ Stored todo ${todoIndex + 1} for task ${
-                    task.id
-                  }`
-                );
               } catch (error) {
-                console.error(
-                  `[IndexedDB] ✗ Failed to store todo ${todoIndex + 1}:`,
-                  error
-                );
+                if (DEBUG_MODE) {
+                  console.error(
+                    `[IndexedDB] Failed to store todo ${todoIndex + 1}:`,
+                    error
+                  );
+                }
               }
             });
           });
@@ -247,45 +242,35 @@ export class IndexedDBService {
 
       // Handle flat arrays if provided (for backwards compatibility)
       if (data.tasks && Array.isArray(data.tasks)) {
-        console.log("[IndexedDB] Processing tasks (flat array)...");
         data.tasks.forEach((task, index) => {
           const { todos: _, ...taskWithoutTodos } = task;
 
           try {
             tasksStore.add(taskWithoutTodos);
             tasksStored++;
-            console.log(
-              `[IndexedDB] ✓ Stored flat task ${index + 1}: ${
-                task.title || task.id
-              }`
-            );
           } catch (error) {
-            console.error(
-              `[IndexedDB] ✗ Failed to store flat task ${index + 1}:`,
-              error,
-              task
-            );
+            if (DEBUG_MODE) {
+              console.error(
+                `[IndexedDB] Failed to store flat task ${index + 1}:`,
+                error
+              );
+            }
           }
         });
       }
 
       if (data.todos && Array.isArray(data.todos)) {
-        console.log("[IndexedDB] Processing todos (flat array)...");
         data.todos.forEach((todo, index) => {
           try {
             todosStore.add(todo);
             todosStored++;
-            console.log(
-              `[IndexedDB] ✓ Stored flat todo ${index + 1}: ${
-                todo.title || todo.id
-              }`
-            );
           } catch (error) {
-            console.error(
-              `[IndexedDB] ✗ Failed to store flat todo ${index + 1}:`,
-              error,
-              todo
-            );
+            if (DEBUG_MODE) {
+              console.error(
+                `[IndexedDB] Failed to store flat todo ${index + 1}:`,
+                error
+              );
+            }
           }
         });
       }
@@ -295,7 +280,6 @@ export class IndexedDBService {
         key: "lastUpdated",
         value: new Date().toISOString(),
       });
-      console.log("[IndexedDB] Metadata updated");
     });
   }
 
@@ -314,8 +298,6 @@ export class IndexedDBService {
       "readonly"
     );
 
-    console.log("[IndexedDB] Fetching all data from database...");
-
     const projects = await this.getAll(transaction.objectStore("projects"));
     const tasks = await this.getAll(transaction.objectStore("tasks"));
     const todos = await this.getAll(transaction.objectStore("todos"));
@@ -324,22 +306,12 @@ export class IndexedDBService {
       "lastUpdated"
     );
 
-    console.log("[IndexedDB] Retrieved from database:", {
-      projectsCount: projects.length,
-      tasksCount: tasks.length,
-      todosCount: todos.length,
-      lastUpdated: metadata?.value || null,
-    });
-
-    // Log sample data to verify structure
-    if (projects.length > 0) {
-      console.log("[IndexedDB] Sample retrieved project:", projects[0]);
-    }
-    if (tasks.length > 0) {
-      console.log("[IndexedDB] Sample retrieved task:", tasks[0]);
-    }
-    if (todos.length > 0) {
-      console.log("[IndexedDB] Sample retrieved todo:", todos[0]);
+    if (DEBUG_MODE) {
+      console.log("[IndexedDB] Retrieved:", {
+        projects: projects.length,
+        tasks: tasks.length,
+        todos: todos.length,
+      });
     }
 
     return {
@@ -432,10 +404,7 @@ export class IndexedDBService {
 
     return new Promise((resolve, reject) => {
       const request = store.put(project);
-      request.onsuccess = () => {
-        console.log("[IndexedDB] Project saved:", project.id);
-        resolve();
-      };
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
@@ -450,10 +419,7 @@ export class IndexedDBService {
 
     return new Promise((resolve, reject) => {
       const request = store.delete(projectId);
-      request.onsuccess = () => {
-        console.log("[IndexedDB] Project deleted:", projectId);
-        resolve();
-      };
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
@@ -465,11 +431,7 @@ export class IndexedDBService {
     const db = await this.ensureDB();
     const transaction = db.transaction(["projects"], "readonly");
     const store = transaction.objectStore("projects");
-    const projects = await this.getAll(store);
-    console.log(
-      `[IndexedDB] getProjects() returned ${projects.length} projects`
-    );
-    return projects;
+    return this.getAll(store);
   }
 
   /**
@@ -482,10 +444,7 @@ export class IndexedDBService {
 
     return new Promise((resolve, reject) => {
       const request = store.put(task);
-      request.onsuccess = () => {
-        console.log("[IndexedDB] Task saved:", task.id);
-        resolve();
-      };
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
@@ -500,10 +459,7 @@ export class IndexedDBService {
 
     return new Promise((resolve, reject) => {
       const request = store.delete(taskId);
-      request.onsuccess = () => {
-        console.log("[IndexedDB] Task deleted:", taskId);
-        resolve();
-      };
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
@@ -515,9 +471,7 @@ export class IndexedDBService {
     const db = await this.ensureDB();
     const transaction = db.transaction(["tasks"], "readonly");
     const store = transaction.objectStore("tasks");
-    const tasks = await this.getAll(store);
-    console.log(`[IndexedDB] getTasks() returned ${tasks.length} tasks`);
-    return tasks;
+    return this.getAll(store);
   }
 
   /**
@@ -546,10 +500,7 @@ export class IndexedDBService {
 
     return new Promise((resolve, reject) => {
       const request = store.put(todo);
-      request.onsuccess = () => {
-        console.log("[IndexedDB] Todo saved:", todo.id);
-        resolve();
-      };
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
@@ -564,10 +515,7 @@ export class IndexedDBService {
 
     return new Promise((resolve, reject) => {
       const request = store.delete(todoId);
-      request.onsuccess = () => {
-        console.log("[IndexedDB] Todo deleted:", todoId);
-        resolve();
-      };
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
@@ -579,9 +527,7 @@ export class IndexedDBService {
     const db = await this.ensureDB();
     const transaction = db.transaction(["todos"], "readonly");
     const store = transaction.objectStore("todos");
-    const todos = await this.getAll(store);
-    console.log(`[IndexedDB] getTodos() returned ${todos.length} todos`);
-    return todos;
+    return this.getAll(store);
   }
 
   /**
@@ -611,10 +557,7 @@ export class IndexedDBService {
     );
 
     return new Promise((resolve, reject) => {
-      transaction.oncomplete = () => {
-        console.log("[IndexedDB] All data cleared");
-        resolve();
-      };
+      transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
 
       transaction.objectStore("projects").clear();
@@ -1200,7 +1143,9 @@ export class IndexedDBService {
     if (this.db) {
       this.db.close();
       this.db = null;
-      console.log("[IndexedDB] Database connection closed");
+      if (DEBUG_MODE) {
+        console.log("[IndexedDB] Database connection closed");
+      }
     }
   }
 }

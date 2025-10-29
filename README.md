@@ -2,6 +2,8 @@
 
 ## PLEASE INCLUDE USABILITY TESTING!!!!!!!!!!!!!!!!!!!!!!!!
 
+## Remove endpoints that are not being used on the frontend, in the backend
+
 # problems
 
 ## Issues I had, time out with canvas link data, time out wasnt set, so i setted one

@@ -3,11 +3,14 @@ import { CookieManager } from "./cookie-manager";
 
 // Configuration module for API settings and utilities
 
+// Debug mode - set to true only when you need detailed logging
+export const DEBUG_MODE = process.env.NEXT_PUBLIC_DEBUG === "false";
+
 // Configuration for different environments
 const configs: Record<string, ApiConfig> = {
   development: {
     baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
-    timeout: 300000,
+    timeout: 30000, // 30 seconds - reduced from 5 minutes
     retries: 3,
     headers: {
       "Content-Type": "application/json",
@@ -16,7 +19,7 @@ const configs: Record<string, ApiConfig> = {
   production: {
     baseUrl:
       process.env.NEXT_PUBLIC_API_URL || "https://youdidnttest.noki.co.za",
-    timeout: 300000,
+    timeout: 30000, // 30 seconds - reduced from 5 minutes
     retries: 2,
     headers: {
       "Content-Type": "application/json",
@@ -24,7 +27,7 @@ const configs: Record<string, ApiConfig> = {
   },
   test: {
     baseUrl: "http://localhost:3000",
-    timeout: 300000,
+    timeout: 30000, // 30 seconds - reduced from 5 minutes
     retries: 1,
     headers: {
       "Content-Type": "application/json",
