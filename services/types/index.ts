@@ -63,6 +63,7 @@ export interface ServiceFactory {
   createTimetableService(): TimetableService;
   createCanvasService(): CanvasService;
   createMainService(): MainService;
+  createAIService(): AIService;
 }
 
 // Forward declarations for service interfaces
@@ -408,4 +409,137 @@ export interface AllUserData {
 export interface CachedData {
   data: AllUserData;
   lastUpdated: string; // ISO 8601 datetime string
+}
+
+// AI Service Types
+export interface AIService extends BaseService {
+  getAllConversations(): Promise<ApiResponse<Conversation[]>>;
+  getConversationHistory(
+    conversationId: string
+  ): Promise<ApiResponse<ConversationHistoryResponse>>;
+  newConversation(): Promise<ApiResponse<NewConversationResponse>>;
+  chat(data: ChatRequest): Promise<ApiResponse<ChatResponse>>;
+  renameConversation(
+    conversationId: string,
+    title: string
+  ): Promise<ApiResponse<ConversationUpdateResponse>>;
+  deleteConversation(
+    conversationId: string
+  ): Promise<ApiResponse<DeleteConversationResponse>>;
+}
+
+// Conversation types
+export interface Conversation {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+}
+
+export interface NewConversationResponse {
+  conversation_id: string;
+}
+
+export interface ChatRequest {
+  conversation_id: string;
+  prompt: string;
+  projects?: Array<{ project_id: string }>;
+  tasks?: Array<{ task_id: string }>;
+  todos?: Array<{ todo_id: string }>;
+}
+
+export interface ChatResponse {
+  stage: string;
+  conversation_id: string;
+  text: string;
+  blocks: any[]; // Array of structured UI blocks (optional)
+  timestamp: string;
+  token_usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    embedding_tokens: number;
+    cost_estimate_usd: number;
+  };
+}
+
+export interface ConversationUpdateResponse {
+  id: string;
+  title: string;
+  updated_at: string;
+}
+
+export interface DeleteConversationResponse {
+  message: string;
+  conversation_id: string;
+}
+
+// Conversation history response type
+export interface ConversationHistoryResponse {
+  id: string;
+  title: string;
+  description: string | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  user: {
+    id: string;
+    firstname: string;
+    lastname: string;
+    email: string;
+  };
+  messages: ConversationMessage[];
+}
+
+// Conversation history message types
+export interface ConversationMessage {
+  id: string;
+  conversation_id: string;
+  user_id: string | null;
+  type: "Prompt" | "Response";
+  prompt: string | null; // Used for type "Prompt"
+  projects: MessageProject[] | null; // Full project context objects
+  tasks: MessageTask[] | null; // Full task context objects
+  todos: MessageTodo[] | null; // Full todo context objects
+  text: string | null; // Used for type "Response"
+  blocks: any[] | null; // Array of structured UI blocks (optional, for type "Response")
+  token_usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    embedding_tokens: number;
+    cost_estimate_usd: number;
+  } | null;
+  metadata: any | null; // Additional metadata
+  embedding_id: string | null;
+  created_at: string;
+}
+
+// Context objects included in messages
+export interface MessageProject {
+  project_id: string;
+  title: string;
+  description?: string;
+  instructor?: string;
+}
+
+export interface MessageTask {
+  task_id: string;
+  title: string;
+  description?: string;
+  due_datetime?: string;
+  status?: "pending" | "in_progress" | "completed";
+  project_id?: string;
+}
+
+export interface MessageTodo {
+  todo_id: string;
+  title: string;
+  description?: string;
+  due_date?: string;
+  status?: "pending" | "in_progress" | "completed";
+  project_id?: string;
+  task_id?: string;
+  priority?: "low" | "medium" | "high";
 }

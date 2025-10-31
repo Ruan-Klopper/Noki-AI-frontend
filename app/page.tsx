@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuthContext } from "@/services/auth/auth-context";
 import { useMain } from "@/services";
+import { useAI } from "@/services/hooks";
+import { saveConversationsToCache } from "@/services/ai/conversation-cache";
 
 export default function HomePage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthContext();
   const { fetchAllUserData, isLoading: dataLoading, error } = useMain();
+  const { getAllConversations } = useAI();
   const [dataFetched, setDataFetched] = useState(false);
 
   useEffect(() => {
@@ -29,6 +32,23 @@ export default function HomePage() {
           console.log("[Home Page] Fetching all user data...");
           await fetchAllUserData();
           console.log("[Home Page] All user data fetched successfully");
+
+          // Fetch and cache conversations
+          console.log("[Home Page] Fetching conversations...");
+          try {
+            const conversationsResponse = await getAllConversations();
+            if (conversationsResponse?.success && conversationsResponse.data) {
+              saveConversationsToCache(conversationsResponse.data);
+              console.log(
+                "[Home Page] Conversations cached successfully:",
+                conversationsResponse.data.length
+              );
+            }
+          } catch (convErr) {
+            console.error("[Home Page] Error fetching conversations:", convErr);
+            // Continue even if conversations fail to load
+          }
+
           setDataFetched(true);
           // Redirect to dashboard after successful data fetch
           router.push("/dashboard");
@@ -43,7 +63,8 @@ export default function HomePage() {
 
       fetchData();
     }
-  }, [isAuthenticated, authLoading, dataFetched, fetchAllUserData, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, authLoading, dataFetched]);
 
   // Show loading state
   const isLoading =

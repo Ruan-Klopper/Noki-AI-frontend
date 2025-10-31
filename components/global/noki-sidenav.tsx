@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -20,6 +20,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useAuthContext } from "../../services/auth/auth-context";
+import { getConversationsFromCache } from "../../services/ai/conversation-cache";
+import { Conversation } from "../../services/types";
 
 interface SidenavProps {
   className?: string;
@@ -27,13 +29,28 @@ interface SidenavProps {
   onToggle: () => void;
 }
 
-const mockConversations = [
-  { id: "1", title: "Help with React Hooks", timestamp: "2 hours ago" },
-  { id: "2", title: "Explain TypeScript Generics", timestamp: "Yesterday" },
-  { id: "3", title: "CSS Grid Layout Tips", timestamp: "2 days ago" },
-  { id: "4", title: "Next.js App Router Guide", timestamp: "3 days ago" },
-  { id: "5", title: "Database Design Questions", timestamp: "1 week ago" },
-];
+/**
+ * Format a date to a relative time string
+ */
+const formatTimestamp = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMs / 60000);
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInMinutes < 1) return "Just now";
+  if (diffInMinutes < 60)
+    return `${diffInMinutes} ${diffInMinutes === 1 ? "minute" : "minutes"} ago`;
+  if (diffInHours < 24)
+    return `${diffInHours} ${diffInHours === 1 ? "hour" : "hours"} ago`;
+  if (diffInDays < 7)
+    return `${diffInDays} ${diffInDays === 1 ? "day" : "days"} ago`;
+
+  // For older dates, show the date
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
 
 export default function NokiSidenav({
   className = "",
@@ -42,12 +59,89 @@ export default function NokiSidenav({
 }: SidenavProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNavAccordionOpen, setIsNavAccordionOpen] = useState(false);
-  const [activeConversationId, setActiveConversationId] = useState<
-    string | null
-  >("1");
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [, setRefreshTrigger] = useState(0); // Force re-render when active conversation changes
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuthContext();
+
+  const isChatActive = pathname === "/chat";
+
+  // Load conversations from cache and listen for updates
+  useEffect(() => {
+    const loadConversations = () => {
+      const cached = getConversationsFromCache();
+      if (cached && cached.conversations) {
+        setConversations(cached.conversations);
+      }
+    };
+
+    loadConversations();
+    // Refresh every 5 seconds to get updated conversations
+    const interval = setInterval(loadConversations, 5000);
+
+    // Listen for storage events to update when conversations are cached elsewhere
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "noki_conversations_cache") {
+        loadConversations();
+      }
+    };
+
+    // Poll for active conversation changes (since storage events don't fire in same window)
+    const activePollInterval = setInterval(() => {
+      setRefreshTrigger((prev) => prev + 1);
+    }, 1000);
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(activePollInterval);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
+  // Ensure we're on chat page when clicking a conversation
+  const handleConversationClick = (conversationId: string) => {
+    // Store the conversation ID in sessionStorage so the chat page can pick it up
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("selectedConversationId", conversationId);
+    }
+
+    if (pathname !== "/chat") {
+      router.push("/chat");
+    } else {
+      // If already on chat page, trigger a custom event that the conversation context can listen to
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("conversationSelected", {
+            detail: { conversationId },
+          })
+        );
+      }
+    }
+  };
+
+  // Handle new conversation button
+  const handleNewConversation = () => {
+    // Clear selected conversation
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("selectedConversationId");
+    }
+
+    if (pathname !== "/chat") {
+      router.push("/chat");
+    } else {
+      // Trigger event to clear active conversation
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("conversationSelected", {
+            detail: { conversationId: null },
+          })
+        );
+      }
+    }
+  };
 
   const navLinks = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -72,8 +166,6 @@ export default function NokiSidenav({
       router.push("/signin");
     }
   };
-
-  const isChatActive = pathname === "/chat";
 
   return (
     <>
@@ -190,59 +282,87 @@ export default function NokiSidenav({
                 <p className="text-xs font-roboto font-semibold text-muted-foreground uppercase tracking-wider">
                   Conversations
                 </p>
-                <button className="p-1 hover:bg-secondary rounded-md transition-colors group">
+                <button
+                  onClick={handleNewConversation}
+                  className="p-1 hover:bg-secondary rounded-md transition-colors group"
+                  title="New conversation"
+                >
                   <Plus className="w-4 h-4 text-muted-foreground group-hover:text-noki-primary transition-colors" />
                 </button>
               </div>
-              <div className="space-y-1">
-                {mockConversations.map((conversation, index) => {
-                  const isActiveConversation =
-                    activeConversationId === conversation.id;
+              <div className="space-y-1 max-h-[400px] overflow-y-auto">
+                {conversations.length === 0 ? (
+                  <div className="px-3 py-4 text-center">
+                    <p className="text-xs font-roboto text-muted-foreground">
+                      No conversations yet
+                    </p>
+                    <p className="text-xs font-roboto text-muted-foreground mt-1">
+                      Start chatting to create one
+                    </p>
+                  </div>
+                ) : (
+                  conversations.map(
+                    (conversation: Conversation, index: number) => {
+                      const activeId =
+                        typeof window !== "undefined"
+                          ? sessionStorage.getItem("activeConversationId") ||
+                            sessionStorage.getItem("selectedConversationId")
+                          : null;
+                      const isActiveConversation = activeId === conversation.id;
 
-                  return (
-                    <div
-                      key={conversation.id}
-                      onClick={() => setActiveConversationId(conversation.id)}
-                      className={`group flex items-start gap-2 px-3 py-2 rounded-lg transition-all cursor-pointer animate-in fade-in slide-in-from-left-2 duration-300 ${
-                        isActiveConversation
-                          ? "bg-noki-primary/10 border border-noki-primary/20"
-                          : "hover:bg-secondary"
-                      }`}
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <MessageCircle
-                        className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                          isActiveConversation
-                            ? "text-noki-primary"
-                            : "text-muted-foreground"
-                        }`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`text-sm font-roboto truncate ${
+                      return (
+                        <div
+                          key={conversation.id}
+                          onClick={() =>
+                            handleConversationClick(conversation.id)
+                          }
+                          className={`group flex items-start gap-2 px-3 py-2 rounded-lg transition-all cursor-pointer animate-in fade-in slide-in-from-left-2 duration-300 ${
                             isActiveConversation
-                              ? "text-noki-primary font-medium"
-                              : "text-foreground"
+                              ? "bg-noki-primary/10 border border-noki-primary/20"
+                              : "hover:bg-secondary"
                           }`}
+                          style={{ animationDelay: `${index * 50}ms` }}
                         >
-                          {conversation.title}
-                        </p>
-                        <p className="text-xs font-roboto text-muted-foreground">
-                          {conversation.timestamp}
-                        </p>
-                      </div>
-                      <button
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Handle delete
-                        }}
-                      >
-                        <Trash2 className="w-3 h-3 text-muted-foreground hover:text-red-500 transition-colors" />
-                      </button>
-                    </div>
-                  );
-                })}
+                          <MessageCircle
+                            className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                              isActiveConversation
+                                ? "text-noki-primary"
+                                : "text-muted-foreground"
+                            }`}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`text-sm font-roboto truncate ${
+                                isActiveConversation
+                                  ? "text-noki-primary font-medium"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {conversation.title}
+                            </p>
+                            <p className="text-xs font-roboto text-muted-foreground">
+                              {formatTimestamp(
+                                conversation.updated_at ||
+                                  conversation.created_at
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // TODO: Handle delete conversation
+                              // conversationContext?.deleteConversation(conversation.id);
+                            }}
+                            title="Delete conversation"
+                          >
+                            <Trash2 className="w-3 h-3 text-muted-foreground hover:text-red-500 transition-colors" />
+                          </button>
+                        </div>
+                      );
+                    }
+                  )
+                )}
               </div>
             </div>
           )}
@@ -457,62 +577,94 @@ export default function NokiSidenav({
                     <p className="text-xs font-roboto font-semibold text-muted-foreground uppercase tracking-wider">
                       Conversations
                     </p>
-                    <button className="p-1 hover:bg-secondary rounded-md transition-colors group">
+                    <button
+                      onClick={() => {
+                        handleNewConversation();
+                        handleMobileLinkClick();
+                      }}
+                      className="p-1 hover:bg-secondary rounded-md transition-colors group"
+                      title="New conversation"
+                    >
                       <Plus className="w-4 h-4 text-muted-foreground group-hover:text-noki-primary transition-colors" />
                     </button>
                   </div>
-                  <div className="space-y-1">
-                    {mockConversations.map((conversation, index) => {
-                      const isActiveConversation =
-                        activeConversationId === conversation.id;
+                  <div className="space-y-1 max-h-[400px] overflow-y-auto">
+                    {conversations.length === 0 ? (
+                      <div className="px-3 py-4 text-center">
+                        <p className="text-xs font-roboto text-muted-foreground">
+                          No conversations yet
+                        </p>
+                        <p className="text-xs font-roboto text-muted-foreground mt-1">
+                          Start chatting to create one
+                        </p>
+                      </div>
+                    ) : (
+                      conversations.map(
+                        (conversation: Conversation, index: number) => {
+                          const activeId =
+                            typeof window !== "undefined"
+                              ? sessionStorage.getItem(
+                                  "activeConversationId"
+                                ) ||
+                                sessionStorage.getItem("selectedConversationId")
+                              : null;
+                          const isActiveConversation =
+                            activeId === conversation.id;
 
-                      return (
-                        <div
-                          key={conversation.id}
-                          onClick={() => {
-                            setActiveConversationId(conversation.id);
-                            handleMobileLinkClick();
-                          }}
-                          className={`group flex items-start gap-2 px-3 py-2 rounded-lg transition-all cursor-pointer animate-in fade-in slide-in-from-left-2 duration-300 ${
-                            isActiveConversation
-                              ? "bg-noki-primary/10 border border-noki-primary/20"
-                              : "hover:bg-secondary"
-                          }`}
-                          style={{ animationDelay: `${index * 50}ms` }}
-                        >
-                          <MessageCircle
-                            className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                              isActiveConversation
-                                ? "text-noki-primary"
-                                : "text-muted-foreground"
-                            }`}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className={`text-sm font-roboto truncate ${
+                          return (
+                            <div
+                              key={conversation.id}
+                              onClick={() => {
+                                handleConversationClick(conversation.id);
+                                handleMobileLinkClick();
+                              }}
+                              className={`group flex items-start gap-2 px-3 py-2 rounded-lg transition-all cursor-pointer animate-in fade-in slide-in-from-left-2 duration-300 ${
                                 isActiveConversation
-                                  ? "text-noki-primary font-medium"
-                                  : "text-foreground"
+                                  ? "bg-noki-primary/10 border border-noki-primary/20"
+                                  : "hover:bg-secondary"
                               }`}
+                              style={{ animationDelay: `${index * 50}ms` }}
                             >
-                              {conversation.title}
-                            </p>
-                            <p className="text-xs font-roboto text-muted-foreground">
-                              {conversation.timestamp}
-                            </p>
-                          </div>
-                          <button
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle delete
-                            }}
-                          >
-                            <Trash2 className="w-3 h-3 text-muted-foreground hover:text-red-500 transition-colors" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                              <MessageCircle
+                                className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                                  isActiveConversation
+                                    ? "text-noki-primary"
+                                    : "text-muted-foreground"
+                                }`}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className={`text-sm font-roboto truncate ${
+                                    isActiveConversation
+                                      ? "text-noki-primary font-medium"
+                                      : "text-foreground"
+                                  }`}
+                                >
+                                  {conversation.title}
+                                </p>
+                                <p className="text-xs font-roboto text-muted-foreground">
+                                  {formatTimestamp(
+                                    conversation.updated_at ||
+                                      conversation.created_at
+                                  )}
+                                </p>
+                              </div>
+                              <button
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // TODO: Handle delete conversation
+                                  // conversationContext?.deleteConversation(conversation.id);
+                                }}
+                                title="Delete conversation"
+                              >
+                                <Trash2 className="w-3 h-3 text-muted-foreground hover:text-red-500 transition-colors" />
+                              </button>
+                            </div>
+                          );
+                        }
+                      )
+                    )}
                   </div>
                 </div>
               )}

@@ -14,6 +14,7 @@ export { TodoServiceImpl } from "./todo/todo.service";
 export { TimetableServiceImpl } from "./timetable/timetable.service";
 export { CanvasServiceImpl } from "./canvas/canvas.service";
 export { MainServiceImpl } from "./main/main.service";
+export { AIServiceImpl } from "./ai/ai.service";
 
 // Storage services
 export {
@@ -37,6 +38,7 @@ export {
   getTimetableService,
   getCanvasService,
   getMainService,
+  getAIService,
 } from "./factory";
 
 export { getHttpClient, createHttpClient } from "./http";

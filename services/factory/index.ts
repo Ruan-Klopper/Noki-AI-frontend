@@ -8,6 +8,7 @@ import {
   TimetableService,
   CanvasService,
   MainService,
+  AIService,
 } from "../types";
 import { HttpClient, createHttpClient } from "../http";
 import { AuthServiceImpl } from "../auth/auth.service";
@@ -18,6 +19,7 @@ import { TodoServiceImpl } from "../todo/todo.service";
 import { TimetableServiceImpl } from "../timetable/timetable.service";
 import { CanvasServiceImpl } from "../canvas/canvas.service";
 import { MainServiceImpl } from "../main/main.service";
+import { AIServiceImpl } from "../ai/ai.service";
 
 // Service Factory implementation following Dependency Inversion Principle
 export class ServiceFactoryImpl implements ServiceFactory {
@@ -61,6 +63,10 @@ export class ServiceFactoryImpl implements ServiceFactory {
     // Main service creates its own HTTP client with extended timeout (5 minutes)
     // Do NOT pass the factory's httpClient
     return new MainServiceImpl();
+  }
+
+  createAIService(): AIService {
+    return new AIServiceImpl(this.httpClient);
   }
 }
 
@@ -112,4 +118,8 @@ export const getTaskService = (): TaskService => {
 
 export const getTodoService = (): TodoService => {
   return getServiceFactory().createTodoService();
+};
+
+export const getAIService = (): AIService => {
+  return getServiceFactory().createAIService();
 };

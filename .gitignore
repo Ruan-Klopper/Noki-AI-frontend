@@ -167,3 +167,5 @@ services/IMPLEMENTATION_SUMMARY.md
 services/QUICK_REFERENCE.md
 services/SERVICES_README.md
 services/USAGE_EXAMPLES.tsx
+services/ai/USAGE.md
+ENV_VARIABLES.md

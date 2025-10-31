@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import {
   Send,
   Paperclip,
@@ -12,178 +12,350 @@ import {
   X,
   Check,
   Sparkles,
-} from "lucide-react"
-import { useSidenav } from "@/components/global/sidenav-context"
-import { useState, useRef, useEffect } from "react"
-
-interface Course {
-  id: string
-  name: string
-  code: string
-  color: string
-}
+} from "lucide-react";
+import { useSidenav } from "@/components/global/sidenav-context";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useConversationContext } from "@/services/ai/conversation-context";
+import { useAI } from "@/services/hooks";
+import { useMain } from "@/services/hooks/useMain";
+import { ConversationMessage, Conversation } from "@/services/types";
 
 interface Project {
-  id: string
-  name: string
-  color: string
-}
-
-interface Assignment {
-  id: string
-  title: string
-  courseId: string
-  courseName: string
+  id: string;
+  title: string;
+  color_hex?: string;
+  source?: string;
+  course_code?: string;
 }
 
 interface Task {
-  id: string
-  title: string
-  projectId: string
-  projectName: string
+  id: string;
+  title: string;
+  project_id?: string;
+  project?: Project;
 }
 
 export function ChatInterface() {
-  const { isSidenavCollapsed, isRightSidenavCollapsed } = useSidenav()
-  const [inputValue, setInputValue] = useState("")
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { isSidenavCollapsed, isRightSidenavCollapsed } = useSidenav();
+  const {
+    activeConversationId,
+    setActiveConversationId,
+    addMessage,
+    refreshMessages,
+    addConversation,
+  } = useConversationContext();
+  const { chat, newConversation, loading: aiLoading } = useAI();
+  const { getDB } = useMain();
+  const [inputValue, setInputValue] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const [isContextDrawerOpen, setIsContextDrawerOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<"quick" | "courses" | "projects">("quick")
+  const [isContextDrawerOpen, setIsContextDrawerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"quick" | "projects">("quick");
 
-  const [selectedCourses, setSelectedCourses] = useState<Course[]>([])
-  const [selectedProjects, setSelectedProjects] = useState<Project[]>([])
-  const [selectedAssignments, setSelectedAssignments] = useState<Assignment[]>([])
-  const [selectedTasks, setSelectedTasks] = useState<Task[]>([])
+  const [selectedProjects, setSelectedProjects] = useState<Project[]>([]);
+  const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
 
-  const courses: Course[] = [
-    { id: "1", name: "Interactive Development 300", code: "DV300", color: "bg-noki-primary" },
-    { id: "2", name: "Photography 300", code: "PH300", color: "bg-noki-tertiary" },
-    { id: "3", name: "Visual Culture 300", code: "VC300", color: "bg-orange-200" },
-    { id: "4", name: "Experimental Learning 300", code: "EL300", color: "bg-purple-400" },
-    { id: "5", name: "Digital Marketing 200", code: "DM200", color: "bg-cyan-400" },
-  ]
+  // Data loaded from IndexedDB
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
-  const projects: Project[] = [
-    { id: "1", name: "Portfolio Website Redesign", color: "bg-noki-primary" },
-    { id: "2", name: "Mobile App Development", color: "bg-noki-tertiary" },
-    { id: "3", name: "Photography Portfolio", color: "bg-orange-200" },
-    { id: "4", name: "E-commerce Platform", color: "bg-emerald-400" },
-    { id: "5", name: "Fitness Tracking App", color: "bg-rose-400" },
-  ]
+  // Use ref to prevent concurrent loads and track if we've loaded data
+  const isLoadingRef = useRef(false);
+  const lastLoadedKeyRef = useRef<string>("");
 
-  const assignments: Assignment[] = [
-    {
-      id: "c1-1",
-      title: "Start planning and outlining mobile app",
-      courseId: "1",
-      courseName: "Interactive Development 300",
-    },
-    { id: "c1-2", title: "Portfolio Review", courseId: "1", courseName: "Interactive Development 300" },
-    { id: "c2-1", title: "40 images for commercial portfolio", courseId: "2", courseName: "Photography 300" },
-    { id: "c3-1", title: "Visual Culture Essay", courseId: "3", courseName: "Visual Culture 300" },
-  ]
+  // Load projects and tasks from IndexedDB when drawer opens for projects tab
+  useEffect(() => {
+    // Early return if conditions aren't met
+    if (!isContextDrawerOpen || activeTab !== "projects") {
+      // Reset when drawer closes or tab changes
+      isLoadingRef.current = false;
+      lastLoadedKeyRef.current = "";
+      return;
+    }
 
-  const tasks: Task[] = [
-    { id: "p1-1", title: "Design new homepage layout", projectId: "1", projectName: "Portfolio Website Redesign" },
-    { id: "p1-2", title: "Implement dark mode", projectId: "1", projectName: "Portfolio Website Redesign" },
-    { id: "p2-1", title: "Create wireframes", projectId: "2", projectName: "Mobile App Development" },
-    { id: "p3-1", title: "Select best 40 images", projectId: "3", projectName: "Photography Portfolio" },
-  ]
+    // Create a unique key for this combination of drawer state and tab
+    const loadKey = `${isContextDrawerOpen}-${activeTab}`;
+
+    // Skip if we've already loaded for this exact state
+    if (lastLoadedKeyRef.current === loadKey) {
+      return;
+    }
+
+    // Prevent concurrent loads
+    if (isLoadingRef.current) {
+      return;
+    }
+
+    let isMounted = true;
+    isLoadingRef.current = true;
+    lastLoadedKeyRef.current = loadKey;
+
+    const loadProjectsAndTasks = async () => {
+      setIsLoadingProjects(true);
+      try {
+        const db = getDB();
+        await db.init();
+        const [fetchedProjects, fetchedTasks] = await Promise.all([
+          db.getProjects(),
+          db.getTasks(),
+        ]);
+
+        if (!isMounted) return;
+
+        // Transform projects to match our interface
+        const transformedProjects: Project[] = fetchedProjects.map(
+          (p: any) => ({
+            id: p.id,
+            title: p.title || p.name || "Untitled Project",
+            color_hex: p.color_hex || p.color,
+            source: p.source,
+            course_code: p.course_code,
+          })
+        );
+
+        // Transform tasks to match our interface
+        const transformedTasks: Task[] = fetchedTasks.map((t: any) => {
+          const taskProject = fetchedProjects.find(
+            (p: any) => p.id === t.project_id
+          );
+          return {
+            id: t.id,
+            title: t.title || "Untitled Task",
+            project_id: t.project_id,
+            project: taskProject
+              ? {
+                  id: taskProject.id,
+                  title: taskProject.title || taskProject.name || "Untitled",
+                  color_hex: taskProject.color_hex || taskProject.color,
+                  source: taskProject.source,
+                  course_code: taskProject.course_code,
+                }
+              : undefined,
+          };
+        });
+
+        setProjects(transformedProjects);
+        setTasks(transformedTasks);
+      } catch (error) {
+        console.error("Error loading projects and tasks:", error);
+      } finally {
+        if (isMounted) {
+          isLoadingRef.current = false;
+          setIsLoadingProjects(false);
+        }
+      }
+    };
+
+    loadProjectsAndTasks();
+
+    return () => {
+      isMounted = false;
+      isLoadingRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isContextDrawerOpen, activeTab]); // getDB is stable, no need in deps
+
+  // Helper function to get color class from color_hex
+  const getColorClass = (colorHex?: string): string => {
+    if (!colorHex) return "bg-noki-primary";
+    // If it's a hex color, we'll use inline styles
+    if (colorHex.startsWith("#")) {
+      return ""; // Will use inline style instead
+    }
+    return colorHex;
+  };
+
+  // Helper function to get inline style for hex colors
+  const getColorStyle = (colorHex?: string): { backgroundColor?: string } => {
+    if (colorHex && colorHex.startsWith("#")) {
+      return { backgroundColor: colorHex };
+    }
+    return {};
+  };
 
   const quickActions = [
-    { icon: Calendar, label: "How does my schedule look?", color: "text-blue-400" },
+    {
+      icon: Calendar,
+      label: "How does my schedule look?",
+      color: "text-blue-400",
+    },
     { icon: Clock, label: "Create a new timetable", color: "text-purple-400" },
     { icon: FileText, label: "Explain assignment", color: "text-green-400" },
     { icon: HelpCircle, label: "Study tips", color: "text-orange-400" },
-    { icon: BookOpen, label: "Summarize course content", color: "text-cyan-400" },
-    { icon: FolderKanban, label: "Show project progress", color: "text-pink-400" },
-  ]
-
-  const toggleCourse = (course: Course) => {
-    setSelectedCourses((prev) => {
-      const exists = prev.find((c) => c.id === course.id)
-      if (exists) {
-        // Remove course and its assignments
-        setSelectedAssignments((prevAssignments) => prevAssignments.filter((a) => a.courseId !== course.id))
-        return prev.filter((c) => c.id !== course.id)
-      } else {
-        return [...prev, course]
-      }
-    })
-  }
+    {
+      icon: BookOpen,
+      label: "Summarize course content",
+      color: "text-cyan-400",
+    },
+    {
+      icon: FolderKanban,
+      label: "Show project progress",
+      color: "text-pink-400",
+    },
+  ];
 
   const toggleProject = (project: Project) => {
     setSelectedProjects((prev) => {
-      const exists = prev.find((p) => p.id === project.id)
+      const exists = prev.find((p) => p.id === project.id);
       if (exists) {
         // Remove project and its tasks
-        setSelectedTasks((prevTasks) => prevTasks.filter((t) => t.projectId !== project.id))
-        return prev.filter((p) => p.id !== project.id)
+        setSelectedTasks((prevTasks) =>
+          prevTasks.filter((t) => t.project_id !== project.id)
+        );
+        return prev.filter((p) => p.id !== project.id);
       } else {
-        return [...prev, project]
+        return [...prev, project];
       }
-    })
-  }
-
-  const toggleAssignment = (assignment: Assignment) => {
-    setSelectedAssignments((prev) => {
-      const exists = prev.find((a) => a.id === assignment.id)
-      if (exists) {
-        return prev.filter((a) => a.id !== assignment.id)
-      } else {
-        return [...prev, assignment]
-      }
-    })
-  }
+    });
+  };
 
   const toggleTask = (task: Task) => {
     setSelectedTasks((prev) => {
-      const exists = prev.find((t) => t.id === task.id)
+      const exists = prev.find((t) => t.id === task.id);
       if (exists) {
-        return prev.filter((t) => t.id !== task.id)
+        return prev.filter((t) => t.id !== task.id);
       } else {
-        return [...prev, task]
+        return [...prev, task];
       }
-    })
-  }
-
-  const removeCourse = (courseId: string) => {
-    setSelectedCourses((prev) => prev.filter((c) => c.id !== courseId))
-    setSelectedAssignments((prev) => prev.filter((a) => a.courseId !== courseId))
-  }
+    });
+  };
 
   const removeProject = (projectId: string) => {
-    setSelectedProjects((prev) => prev.filter((p) => p.id !== projectId))
-    setSelectedTasks((prev) => prev.filter((t) => t.projectId !== projectId))
-  }
-
-  const removeAssignment = (assignmentId: string) => {
-    setSelectedAssignments((prev) => prev.filter((a) => a.id !== assignmentId))
-  }
+    setSelectedProjects((prev) => prev.filter((p) => p.id !== projectId));
+    setSelectedTasks((prev) => prev.filter((t) => t.project_id !== projectId));
+  };
 
   const removeTask = (taskId: string) => {
-    setSelectedTasks((prev) => prev.filter((t) => t.id !== taskId))
-  }
+    setSelectedTasks((prev) => prev.filter((t) => t.id !== taskId));
+  };
 
-  const openDrawer = (tab: "quick" | "courses" | "projects") => {
-    setActiveTab(tab)
-    setIsContextDrawerOpen(true)
-  }
+  const openDrawer = (tab: "quick" | "projects") => {
+    setActiveTab(tab);
+    setIsContextDrawerOpen(true);
+  };
+
+  /**
+   * Handle sending a message
+   */
+  const handleSendMessage = async () => {
+    const prompt = inputValue.trim();
+    if (!prompt || isSending || aiLoading) return;
+
+    // If no active conversation, create one first
+    let conversationId = activeConversationId;
+    if (!conversationId) {
+      setIsSending(true);
+      try {
+        const convResponse = await newConversation();
+        if (!convResponse?.success || !convResponse.data.conversation_id) {
+          console.error("Failed to create conversation");
+          setIsSending(false);
+          return;
+        }
+        conversationId = convResponse.data.conversation_id;
+        setActiveConversationId(conversationId);
+
+        // Add to conversations list
+        const newConv: Conversation = {
+          id: conversationId,
+          title: `New Conversation - ${new Date().toLocaleDateString()}`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          message_count: 0,
+        };
+        addConversation(newConv);
+      } catch (error) {
+        console.error("Error creating conversation:", error);
+        setIsSending(false);
+        return;
+      } finally {
+        setIsSending(false);
+      }
+    }
+
+    // Add user message to UI immediately (optimistic update)
+    // Full context will be populated when we refresh from server
+    const userMessage: ConversationMessage = {
+      id: `temp-${Date.now()}`,
+      conversation_id: conversationId!,
+      user_id: null, // Will be set by backend
+      type: "Prompt",
+      prompt: prompt,
+      projects: null, // Will be enriched by backend in full response
+      tasks: null, // Will be enriched by backend in full response
+      todos: null,
+      text: null,
+      blocks: null,
+      token_usage: null,
+      metadata: null,
+      embedding_id: null,
+      created_at: new Date().toISOString(),
+    };
+    addMessage(userMessage);
+
+    // Clear input
+    setInputValue("");
+    setIsSending(true);
+
+    // Prepare context data - only send IDs
+    const projectIds = selectedProjects.map((p) => ({ project_id: p.id }));
+    const taskIds = selectedTasks.map((t) => ({ task_id: t.id }));
+
+    try {
+      const response = await chat({
+        conversation_id: conversationId!,
+        prompt,
+        projects: projectIds.length > 0 ? projectIds : undefined,
+        tasks: taskIds.length > 0 ? taskIds : undefined,
+      });
+
+      if (response?.success && response.data) {
+        // Add AI response to messages
+        const aiMessage: ConversationMessage = {
+          id: `msg-${Date.now()}`,
+          conversation_id: conversationId!,
+          user_id: null,
+          type: "Response",
+          prompt: null,
+          projects: null,
+          tasks: null,
+          todos: null,
+          text: response.data.text,
+          blocks: response.data.blocks || null,
+          token_usage: response.data.token_usage || null,
+          metadata: null,
+          embedding_id: null,
+          created_at: response.data.timestamp || new Date().toISOString(),
+        };
+        addMessage(aiMessage);
+
+        // Refresh messages to get the full updated list from server
+        await refreshMessages();
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   useEffect(() => {
-    const textarea = textareaRef.current
+    const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = "auto"
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 128)}px`
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 128)}px`;
     }
-  }, [inputValue])
+  }, [inputValue]);
 
   return (
     <div
       className={`fixed bottom-0 right-0 transition-all duration-300 ${
         isSidenavCollapsed ? "left-0 md:left-16" : "left-0 md:left-64"
-      } ${isRightSidenavCollapsed ? "right-0 md:right-16" : "right-0 md:right-80"}`}
+      } ${
+        isRightSidenavCollapsed ? "right-0 md:right-16" : "right-0 md:right-64"
+      }`}
     >
       {isContextDrawerOpen && (
         <>
@@ -223,22 +395,6 @@ export function ChatInterface() {
                       Quick Actions
                     </button>
                     <button
-                      onClick={() => setActiveTab("courses")}
-                      className={`flex-1 px-4 py-2.5 rounded-xl font-roboto font-medium text-sm transition-all duration-200 ${
-                        activeTab === "courses"
-                          ? "bg-noki-tertiary text-white shadow-lg"
-                          : "bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200"
-                      }`}
-                    >
-                      <BookOpen className="h-4 w-4 inline mr-2" />
-                      Courses
-                      {selectedCourses.length > 0 && (
-                        <span className="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-xs">
-                          {selectedCourses.length}
-                        </span>
-                      )}
-                    </button>
-                    <button
                       onClick={() => setActiveTab("projects")}
                       className={`flex-1 px-4 py-2.5 rounded-xl font-roboto font-medium text-sm transition-all duration-200 ${
                         activeTab === "projects"
@@ -266,163 +422,139 @@ export function ChatInterface() {
                         <button
                           key={index}
                           onClick={() => {
-                            setInputValue(action.label)
-                            setIsContextDrawerOpen(false)
+                            setInputValue(action.label);
+                            setIsContextDrawerOpen(false);
                           }}
                           className="flex items-center gap-3 p-4 bg-gray-800/60 hover:bg-gray-700/80 border border-gray-700/40 rounded-xl text-left transition-all duration-200 hover:scale-[1.02] group"
                         >
-                          <div className={`p-2 rounded-lg bg-gray-900/50 ${action.color}`}>
+                          <div
+                            className={`p-2 rounded-lg bg-gray-900/50 ${action.color}`}
+                          >
                             <action.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
                           </div>
-                          <span className="text-sm text-gray-200 font-roboto">{action.label}</span>
+                          <span className="text-sm text-gray-200 font-roboto">
+                            {action.label}
+                          </span>
                         </button>
                       ))}
-                    </div>
-                  )}
-
-                  {/* Courses Tab */}
-                  {activeTab === "courses" && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      {/* Course Selection */}
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-poppins font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                          Select Courses
-                        </h4>
-                        <div className="grid grid-cols-1 gap-2">
-                          {courses.map((course) => {
-                            const isSelected = selectedCourses.some((c) => c.id === course.id)
-                            return (
-                              <button
-                                key={course.id}
-                                onClick={() => toggleCourse(course)}
-                                className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 hover:scale-[1.01] shadow-lg ${
-                                  isSelected
-                                    ? `${course.color} text-white border-2 border-white/30`
-                                    : `${course.color} text-white opacity-70 hover:opacity-100 border-2 border-transparent`
-                                }`}
-                              >
-                                <div className="flex items-center justify-center w-5 h-5 rounded border-2 border-white/50 bg-white/10">
-                                  {isSelected && <Check className="h-3.5 w-3.5" />}
-                                </div>
-                                <BookOpen className="h-4 w-4" />
-                                <div className="flex-1">
-                                  <div className="font-poppins font-semibold text-sm">{course.name}</div>
-                                  <div className="text-xs opacity-90">{course.code}</div>
-                                </div>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Assignment Selection */}
-                      {selectedCourses.length > 0 && (
-                        <div className="space-y-2 pt-4 border-t border-gray-700/50">
-                          <h4 className="text-sm font-poppins font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                            Select Assignments
-                          </h4>
-                          {selectedCourses.map((course) => {
-                            const courseAssignments = assignments.filter((a) => a.courseId === course.id)
-                            if (courseAssignments.length === 0) return null
-                            return (
-                              <div key={course.id} className="space-y-2">
-                                <p className="text-xs text-gray-500 font-roboto">{course.name}</p>
-                                {courseAssignments.map((assignment) => {
-                                  const isSelected = selectedAssignments.some((a) => a.id === assignment.id)
-                                  return (
-                                    <button
-                                      key={assignment.id}
-                                      onClick={() => toggleAssignment(assignment)}
-                                      className={`flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-200 w-full ${
-                                        isSelected
-                                          ? "bg-blue-600 text-white"
-                                          : "bg-gray-800/60 text-gray-300 hover:bg-gray-700/80"
-                                      }`}
-                                    >
-                                      <div className="flex items-center justify-center w-4 h-4 rounded border border-white/30 bg-white/10">
-                                        {isSelected && <Check className="h-3 w-3" />}
-                                      </div>
-                                      <FileText className="h-3.5 w-3.5" />
-                                      <span className="text-xs font-roboto flex-1">{assignment.title}</span>
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
                     </div>
                   )}
 
                   {/* Projects Tab */}
                   {activeTab === "projects" && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      {/* Project Selection */}
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-poppins font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                          Select Projects
-                        </h4>
-                        <div className="grid grid-cols-1 gap-2">
-                          {projects.map((project) => {
-                            const isSelected = selectedProjects.some((p) => p.id === project.id)
-                            return (
-                              <button
-                                key={project.id}
-                                onClick={() => toggleProject(project)}
-                                className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 hover:scale-[1.01] shadow-lg ${
-                                  isSelected
-                                    ? `${project.color} text-white border-2 border-white/30`
-                                    : `${project.color} text-white opacity-70 hover:opacity-100 border-2 border-transparent`
-                                }`}
-                              >
-                                <div className="flex items-center justify-center w-5 h-5 rounded border-2 border-white/50 bg-white/10">
-                                  {isSelected && <Check className="h-3.5 w-3.5" />}
-                                </div>
-                                <FolderKanban className="h-4 w-4" />
-                                <div className="font-poppins font-semibold text-sm flex-1">{project.name}</div>
-                              </button>
-                            )
-                          })}
+                      {isLoadingProjects ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="text-gray-400 font-roboto">
+                            Loading projects...
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Task Selection */}
-                      {selectedProjects.length > 0 && (
-                        <div className="space-y-2 pt-4 border-t border-gray-700/50">
-                          <h4 className="text-sm font-poppins font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                            Select Tasks
-                          </h4>
-                          {selectedProjects.map((project) => {
-                            const projectTasks = tasks.filter((t) => t.projectId === project.id)
-                            if (projectTasks.length === 0) return null
-                            return (
-                              <div key={project.id} className="space-y-2">
-                                <p className="text-xs text-gray-500 font-roboto">{project.name}</p>
-                                {projectTasks.map((task) => {
-                                  const isSelected = selectedTasks.some((t) => t.id === task.id)
+                      ) : (
+                        <>
+                          {/* Project Selection */}
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-poppins font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                              Select Projects
+                            </h4>
+                            {projects.length === 0 ? (
+                              <div className="text-center py-8 text-gray-500 font-roboto text-sm">
+                                No projects found. Create a project to get
+                                started.
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 gap-2">
+                                {projects.map((project) => {
+                                  const isSelected = selectedProjects.some(
+                                    (p) => p.id === project.id
+                                  );
+                                  const colorClass = getColorClass(
+                                    project.color_hex
+                                  );
+                                  const colorStyle = getColorStyle(
+                                    project.color_hex
+                                  );
                                   return (
                                     <button
-                                      key={task.id}
-                                      onClick={() => toggleTask(task)}
-                                      className={`flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-200 w-full ${
+                                      key={project.id}
+                                      onClick={() => toggleProject(project)}
+                                      style={colorStyle}
+                                      className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 hover:scale-[1.01] shadow-lg ${
                                         isSelected
-                                          ? "bg-green-600 text-white"
-                                          : "bg-gray-800/60 text-gray-300 hover:bg-gray-700/80"
+                                          ? `${colorClass} text-white border-2 border-white/30`
+                                          : `${colorClass} text-white opacity-70 hover:opacity-100 border-2 border-transparent`
                                       }`}
                                     >
-                                      <div className="flex items-center justify-center w-4 h-4 rounded border border-white/30 bg-white/10">
-                                        {isSelected && <Check className="h-3 w-3" />}
+                                      <div className="flex items-center justify-center w-5 h-5 rounded border-2 border-white/50 bg-white/10">
+                                        {isSelected && (
+                                          <Check className="h-3.5 w-3.5" />
+                                        )}
                                       </div>
-                                      <FileText className="h-3.5 w-3.5" />
-                                      <span className="text-xs font-roboto flex-1">{task.title}</span>
+                                      <FolderKanban className="h-4 w-4" />
+                                      <div className="flex-1">
+                                        <div className="font-poppins font-semibold text-sm">
+                                          {project.title}
+                                        </div>
+                                        {project.course_code && (
+                                          <div className="text-xs opacity-90">
+                                            {project.course_code}
+                                          </div>
+                                        )}
+                                      </div>
                                     </button>
-                                  )
+                                  );
                                 })}
                               </div>
-                            )
-                          })}
-                        </div>
+                            )}
+                          </div>
+
+                          {/* Task Selection */}
+                          {selectedProjects.length > 0 && (
+                            <div className="space-y-2 pt-4 border-t border-gray-700/50">
+                              <h4 className="text-sm font-poppins font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                                Select Tasks
+                              </h4>
+                              {selectedProjects.map((project) => {
+                                const projectTasks = tasks.filter(
+                                  (t) => t.project_id === project.id
+                                );
+                                if (projectTasks.length === 0) return null;
+                                return (
+                                  <div key={project.id} className="space-y-2">
+                                    <p className="text-xs text-gray-500 font-roboto">
+                                      {project.title}
+                                    </p>
+                                    {projectTasks.map((task) => {
+                                      const isSelected = selectedTasks.some(
+                                        (t) => t.id === task.id
+                                      );
+                                      return (
+                                        <button
+                                          key={task.id}
+                                          onClick={() => toggleTask(task)}
+                                          className={`flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-200 w-full ${
+                                            isSelected
+                                              ? "bg-green-600 text-white"
+                                              : "bg-gray-800/60 text-gray-300 hover:bg-gray-700/80"
+                                          }`}
+                                        >
+                                          <div className="flex items-center justify-center w-4 h-4 rounded border border-white/30 bg-white/10">
+                                            {isSelected && (
+                                              <Check className="h-3 w-3" />
+                                            )}
+                                          </div>
+                                          <FileText className="h-3.5 w-3.5" />
+                                          <span className="text-xs font-roboto flex-1">
+                                            {task.title}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
@@ -448,19 +580,6 @@ export function ChatInterface() {
               </button>
 
               <button
-                onClick={() => openDrawer("courses")}
-                className="group flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-noki-tertiary/20 to-purple-500/20 backdrop-blur-sm border border-noki-tertiary/40 rounded-full text-sm font-roboto font-medium text-noki-tertiary hover:bg-noki-tertiary hover:text-white transition-all duration-300 shadow-lg hover:shadow-noki-tertiary/30 hover:scale-105"
-              >
-                <BookOpen className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                Courses
-                {selectedCourses.length > 0 && (
-                  <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs font-bold">
-                    {selectedCourses.length}
-                  </span>
-                )}
-              </button>
-
-              <button
                 onClick={() => openDrawer("projects")}
                 className="group flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 backdrop-blur-sm border border-emerald-500/40 rounded-full text-sm font-roboto font-medium text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all duration-300 shadow-lg hover:shadow-emerald-500/30 hover:scale-105"
               >
@@ -475,58 +594,30 @@ export function ChatInterface() {
             </div>
 
             {/* Selected Items Display - centered and organized */}
-            {(selectedCourses.length > 0 ||
-              selectedProjects.length > 0 ||
-              selectedAssignments.length > 0 ||
-              selectedTasks.length > 0) && (
+            {(selectedProjects.length > 0 || selectedTasks.length > 0) && (
               <div className="flex flex-wrap gap-2 justify-center animate-in fade-in slide-in-from-top-2 duration-300 max-w-3xl">
-                {selectedCourses.map((course) => (
-                  <div
-                    key={course.id}
-                    className={`flex items-center gap-2 px-3 py-1.5 ${course.color} text-white rounded-full text-sm font-medium shadow-lg animate-in fade-in zoom-in-95 duration-300`}
-                  >
-                    <BookOpen className="h-3.5 w-3.5" />
-                    <span>{course.code}</span>
-                    <button
-                      onClick={() => removeCourse(course.id)}
-                      className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                {selectedProjects.map((project) => {
+                  const colorClass = getColorClass(project.color_hex);
+                  const colorStyle = getColorStyle(project.color_hex);
+                  return (
+                    <div
+                      key={project.id}
+                      style={colorStyle}
+                      className={`flex items-center gap-2 px-3 py-1.5 ${colorClass} text-white rounded-full text-sm font-medium shadow-lg animate-in fade-in zoom-in-95 duration-300`}
                     >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-
-                {selectedProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className={`flex items-center gap-2 px-3 py-1.5 ${project.color} text-white rounded-full text-sm font-medium shadow-lg animate-in fade-in zoom-in-95 duration-300`}
-                  >
-                    <FolderKanban className="h-3.5 w-3.5" />
-                    <span className="max-w-[150px] truncate">{project.name}</span>
-                    <button
-                      onClick={() => removeProject(project.id)}
-                      className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-
-                {selectedAssignments.map((assignment) => (
-                  <div
-                    key={assignment.id}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-500 text-white rounded-full text-xs font-medium shadow-lg animate-in fade-in zoom-in-95 duration-300"
-                  >
-                    <FileText className="h-3 w-3" />
-                    <span className="max-w-[150px] truncate">{assignment.title}</span>
-                    <button
-                      onClick={() => removeAssignment(assignment.id)}
-                      className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
-                  </div>
-                ))}
+                      <FolderKanban className="h-3.5 w-3.5" />
+                      <span className="max-w-[150px] truncate">
+                        {project.title}
+                      </span>
+                      <button
+                        onClick={() => removeProject(project.id)}
+                        className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+                })}
 
                 {selectedTasks.map((task) => (
                   <div
@@ -578,10 +669,11 @@ export function ChatInterface() {
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault()
-                          // Handle send message
+                          e.preventDefault();
+                          handleSendMessage();
                         }
                       }}
+                      disabled={isSending || aiLoading}
                     />
                     <style jsx>{`
                       textarea::-webkit-scrollbar {
@@ -591,17 +683,21 @@ export function ChatInterface() {
                         background: transparent;
                       }
                       textarea::-webkit-scrollbar-thumb {
-                        background: #4B5563;
+                        background: #4b5563;
                         border-radius: 2px;
                       }
                       textarea::-webkit-scrollbar-thumb:hover {
-                        background: #6B7280;
+                        background: #6b7280;
                       }
                     `}</style>
                   </div>
 
                   {/* Send Button */}
-                  <button className="flex-shrink-0 relative group/send self-center">
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={isSending || aiLoading || !inputValue.trim()}
+                    className="flex-shrink-0 relative group/send self-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     {/* Glow effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-noki-primary to-blue-600 rounded-full opacity-0 group-hover/send:opacity-100 transition-opacity duration-300 blur-md"></div>
 
@@ -622,5 +718,5 @@ export function ChatInterface() {
         </div>
       </div>
     </div>
-  )
+  );
 }
