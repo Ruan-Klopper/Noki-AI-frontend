@@ -4,7 +4,8 @@ import { useConversationContext } from "@/services/ai/conversation-context";
 import { UserMessage } from "./user-message";
 import { AiThinkingLoader } from "./ai-thinking-loader";
 import { MarkdownText } from "./markdown-text";
-import { AssignmentExplanation } from "./assignment-explanation";
+import { ProposedListBlock } from "./proposed-list-block";
+import { ExplanationBlock } from "./explanation-block";
 
 export function ChatArea() {
   const { messages, isLoading, activeConversationId } =
@@ -71,33 +72,43 @@ export function ChatArea() {
                     </div>
                   )}
 
-                  {/* Display blocks - handle explanation_block specially */}
+                  {/* Display blocks with proper visualization */}
                   {message.blocks && message.blocks.length > 0 && (
                     <div className="space-y-3">
                       {message.blocks.map((block: any, index) => {
-                        // Check if this is an explanation_block
-                        if (block.type === "explanation_block") {
+                        if (block.type === "proposed_list") {
                           return (
-                            <AssignmentExplanation
+                            <ProposedListBlock
                               key={index}
-                              title={block.title}
-                              description={block.description}
-                              footer={block.footer}
+                              title={block.title || "Proposed Todo List"}
+                              items={block.items || []}
+                              proposed_list_for_task_id={
+                                block.proposed_list_for_task_id
+                              }
                             />
                           );
+                        } else if (block.type === "explanation_block") {
+                          return (
+                            <ExplanationBlock
+                              key={index}
+                              explanation_content={
+                                block.explanation_content || ""
+                              }
+                            />
+                          );
+                        } else {
+                          // Fallback for unknown block types - show as raw JSON
+                          return (
+                            <div
+                              key={index}
+                              className="bg-gray-800/50 border border-gray-700 rounded-lg p-4"
+                            >
+                              <pre className="text-xs text-gray-300 font-mono whitespace-pre-wrap break-words">
+                                {JSON.stringify(block, null, 2)}
+                              </pre>
+                            </div>
+                          );
                         }
-
-                        // For other block types, show JSON for now
-                        return (
-                          <div
-                            key={index}
-                            className="bg-gray-800/50 border border-gray-700 rounded-lg p-4"
-                          >
-                            <pre className="text-xs text-gray-300 font-mono whitespace-pre-wrap">
-                              {JSON.stringify(block, null, 2)}
-                            </pre>
-                          </div>
-                        );
                       })}
                     </div>
                   )}
