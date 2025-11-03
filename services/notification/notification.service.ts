@@ -36,9 +36,8 @@ class NotificationService {
       message: title,
       description,
       duration,
-      style: {
-        marginTop: 8,
-      },
+      // Style will be handled by Ant Design provider configuration
+      className: "ant-notification-custom",
     });
   }
 

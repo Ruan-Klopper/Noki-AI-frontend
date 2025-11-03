@@ -176,3 +176,32 @@
     margin-bottom: 1px !important;
   }
 }
+
+/* Ant Design Notification Custom Styling */
+.ant-notification-notice {
+  padding: 16px !important;
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+.ant-notification-notice-content {
+  padding: 0 !important;
+}
+
+.ant-notification-notice-message {
+  margin-bottom: 8px !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+.ant-notification-notice-description {
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+.ant-notification-custom {
+  padding: 16px !important;
+}

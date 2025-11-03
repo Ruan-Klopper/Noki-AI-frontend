@@ -12,115 +12,260 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ManageProjectsModal } from "@/components/global/manage-projects-modal";
+import { useMain } from "@/services/hooks/useMain";
+import { utcToLocalDateString } from "@/lib/timezone-config";
+
+// Type definitions
+interface Todo {
+  id: string;
+  title: string;
+  completed: boolean;
+  taskId: string;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+  dueDate: string | null;
+  description: string | null;
+  projectId: string;
+  todos: Todo[];
+}
+
+interface Project {
+  id: string;
+  name: string;
+  colorHex: string | null;
+  source: "Canvas" | "Personal";
+  courseCode?: string | null;
+  tasks: Task[];
+}
+
+interface Course {
+  id: string;
+  name: string;
+  code: string;
+  colorHex: string | null;
+}
+
+interface Assignment {
+  title: string;
+  dueDate: string;
+  subject: string;
+  taskId: string;
+}
+
+interface DashboardProject {
+  id: string;
+  name: string;
+  status: string;
+  colorHex: string | null;
+}
 
 export default function DashboardPage() {
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const { getDB } = useMain();
 
-  const courses = [
-    {
-      id: "1",
-      name: "Interactive Development 300",
-      code: "DV300",
-      color: "bg-noki-primary",
-    },
-    {
-      id: "2",
-      name: "Photography 300",
-      code: "PH300",
-      color: "bg-noki-tertiary",
-    },
-    {
-      id: "3",
-      name: "Visual Culture 300",
-      code: "VC300",
-      color: "bg-orange-200",
-    },
-    {
-      id: "4",
-      name: "Experimental Learning 300",
-      code: "PH300",
-      color: "bg-noki-tertiary",
-    },
-    {
-      id: "5",
-      name: "Interactive Development Portfolio 300",
-      code: "DV300",
-      color: "bg-noki-primary",
-    },
-  ];
+  // Data State
+  const [personalProjects, setPersonalProjects] = useState<Project[]>([]);
+  const [canvasCourses, setCanvasCourses] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const assignments = [
-    {
-      title: "40 images for commercial portfolio",
-      dueDate: "21 Sept",
-      subject: "PH300",
-    },
-    {
-      title: "Start your planning and outlining of your mobile app",
-      dueDate: "21 Sept",
-      subject: "DV300",
-    },
-    { title: "Visual Culture Essay", dueDate: "25 Sept", subject: "VC300" },
-    { title: "Portfolio Review", dueDate: "28 Sept", subject: "DV300" },
-  ];
+  // Fetch data from IndexedDB
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
 
-  const projects = [
-    {
-      id: "1",
-      name: "Mobile App Prototype",
-      status: "In Progress",
-      color: "bg-blue-500",
-    },
-    {
-      id: "2",
-      name: "Photography Portfolio",
-      status: "Review",
-      color: "bg-purple-500",
-    },
-    {
-      id: "3",
-      name: "Visual Culture Research",
-      status: "Planning",
-      color: "bg-orange-500",
-    },
-  ];
+      try {
+        const db = getDB();
+        await db.init();
 
-  const timelineEvents = [
-    {
-      id: "1",
-      title: "Weekly Project Review",
-      startTime: "09:00",
-      endTime: "12:00",
-      participants: ["A", "B"],
-      color: "bg-blue-500",
-    },
-    {
-      id: "2",
-      title: "User Testing and Feedback",
-      startTime: "09:30",
-      endTime: "12:30",
-      participants: ["C", "D"],
-      color: "bg-green-500",
-    },
-    {
-      id: "3",
-      title: "Collaboration Session",
-      startTime: "10:30",
-      endTime: "13:30",
-      participants: ["E", "F"],
-      color: "bg-purple-500",
-    },
-    {
-      id: "4",
-      title: "Content Creation",
-      startTime: "14:30",
-      endTime: "17:00",
-      participants: ["G"],
-      color: "bg-orange-500",
-    },
-  ];
+        const [fetchedProjects, fetchedTasks, fetchedTodos] = await Promise.all(
+          [db.getProjects(), db.getTasks(), db.getTodos()]
+        );
+
+        // Transform data to structured format
+        const projectsWithTasks: Project[] = fetchedProjects.map(
+          (proj: any) => {
+            // Get all tasks for this project
+            const projectTasks = fetchedTasks
+              .filter((task: any) => task.project_id === proj.id)
+              .map((task: any) => {
+                // Get all todos for this task
+                const taskTodos = fetchedTodos
+                  .filter((todo: any) => todo.task_id === task.id)
+                  .map((todo: any) => ({
+                    id: todo.id,
+                    title: todo.title || todo.name || "Untitled Todo",
+                    completed: todo.is_completed || false,
+                    taskId: task.id,
+                  }));
+
+                return {
+                  id: task.id,
+                  title: task.title || task.name || "Untitled Task",
+                  completed: task.is_submitted || false,
+                  dueDate: task.due_date || null,
+                  description: task.description || null,
+                  projectId: proj.id,
+                  todos: taskTodos,
+                };
+              });
+
+            return {
+              id: proj.id,
+              name: proj.title || proj.name || "Untitled Project",
+              colorHex: proj.color_hex || null,
+              source: proj.source as "Canvas" | "Personal",
+              courseCode: proj.source === "Canvas" ? proj.course_code : null,
+              tasks: projectTasks,
+            };
+          }
+        );
+
+        // Separate by source
+        const personal = projectsWithTasks.filter(
+          (p) => p.source === "Personal"
+        );
+        const canvas = projectsWithTasks.filter((p) => p.source === "Canvas");
+
+        setPersonalProjects(personal);
+        setCanvasCourses(canvas);
+      } catch (error) {
+        console.error("[Dashboard Page] Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+  // Helper function to format date for display
+  const formatDueDate = (dueDate: string | null): string => {
+    if (!dueDate) return "No date";
+
+    try {
+      const localDateStr = utcToLocalDateString(dueDate);
+      const date = new Date(localDateStr);
+      const day = date.getDate();
+      const month = date.toLocaleDateString("en-US", { month: "short" });
+      return `${day} ${month}`;
+    } catch (error) {
+      console.error("[Dashboard Page] Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
+  // Transform courses for display
+  const courses: Course[] = useMemo(() => {
+    return canvasCourses.slice(0, 5).map((course) => {
+      return {
+        id: course.id,
+        name: course.name,
+        code: course.courseCode || "N/A",
+        colorHex: course.colorHex,
+      };
+    });
+  }, [canvasCourses]);
+
+  // Transform assignments for display (upcoming incomplete tasks from Canvas)
+  const assignments: Assignment[] = useMemo(() => {
+    const allAssignments: Array<{
+      title: string;
+      dueDate: string;
+      dueDateObj: Date | null;
+      subject: string;
+      taskId: string;
+    }> = [];
+
+    canvasCourses.forEach((course) => {
+      course.tasks
+        .filter((task) => !task.completed && task.dueDate)
+        .forEach((task) => {
+          let dueDateObj: Date | null = null;
+          try {
+            if (task.dueDate) {
+              const localDateStr = utcToLocalDateString(task.dueDate);
+              dueDateObj = new Date(localDateStr);
+            }
+          } catch (error) {
+            console.error("[Dashboard] Error parsing date:", error);
+          }
+
+          allAssignments.push({
+            title: task.title,
+            dueDate: formatDueDate(task.dueDate),
+            dueDateObj,
+            subject: course.courseCode || "N/A",
+            taskId: task.id,
+          });
+        });
+    });
+
+    // Sort by due date (earliest first) and take first 4
+    return allAssignments
+      .sort((a, b) => {
+        if (!a.dueDateObj && !b.dueDateObj) return 0;
+        if (!a.dueDateObj) return 1;
+        if (!b.dueDateObj) return -1;
+        return a.dueDateObj.getTime() - b.dueDateObj.getTime();
+      })
+      .slice(0, 4)
+      .map(({ dueDateObj, ...rest }) => rest);
+  }, [canvasCourses]);
+
+  // Transform projects for display
+  const projects: DashboardProject[] = useMemo(() => {
+    return personalProjects.slice(0, 3).map((project) => {
+      // Determine status based on task completion
+      const completedTasks = project.tasks.filter((t) => t.completed).length;
+      const totalTasks = project.tasks.length;
+      let status = "Planning";
+      if (totalTasks > 0) {
+        const completionRate = completedTasks / totalTasks;
+        if (completionRate === 1) {
+          status = "Complete";
+        } else if (completionRate >= 0.5) {
+          status = "In Progress";
+        } else if (completionRate > 0) {
+          status = "Started";
+        }
+      }
+
+      return {
+        id: project.id,
+        name: project.name,
+        status,
+        colorHex: project.colorHex,
+      };
+    });
+  }, [personalProjects]);
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    // Calculate completion rate from all tasks (Canvas + Personal)
+    const allTasks = [
+      ...canvasCourses.flatMap((c) => c.tasks),
+      ...personalProjects.flatMap((p) => p.tasks),
+    ];
+    const completedTasks = allTasks.filter((t) => t.completed).length;
+    const totalTasks = allTasks.length;
+    const completionRate =
+      totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    // Active projects count
+    const activeProjects = personalProjects.length;
+
+    return {
+      completionRate,
+      activeProjects,
+    };
+  }, [canvasCourses, personalProjects]);
 
   return (
     <div className="space-y-6">
@@ -140,7 +285,7 @@ export default function DashboardPage() {
               </span>
             </div>
             <h1 className="font-poppins font-bold text-3xl sm:text-4xl">
-              Hi Ruan, Noki is proud of you!
+              Hi username, Noki is proud of you!
             </h1>
             <p className="font-poppins text-base text-white/90">
               You're making amazing progress. Ready to kickstart your day?
@@ -167,29 +312,39 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-            {assignments.map((assignment, index) => (
-              <div
-                key={index}
-                className="bg-background p-4 rounded-2xl border-l-4 border-noki-tertiary hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-poppins font-bold text-xs text-noki-primary bg-noki-primary/10 px-2.5 py-1 rounded-lg">
-                        {assignment.subject}
-                      </span>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock size={12} />
-                        {assignment.dueDate}
-                      </span>
-                    </div>
-                    <div className="text-foreground font-medium text-sm group-hover:text-noki-primary transition-colors line-clamp-2">
-                      {assignment.title}
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading assignments...
+              </div>
+            ) : assignments.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No upcoming assignments
+              </div>
+            ) : (
+              assignments.map((assignment, index) => (
+                <div
+                  key={index}
+                  className="bg-background p-4 rounded-2xl border-l-4 border-noki-tertiary hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-poppins font-bold text-xs text-noki-primary bg-noki-primary/10 px-2.5 py-1 rounded-lg">
+                          {assignment.subject}
+                        </span>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock size={12} />
+                          {assignment.dueDate}
+                        </span>
+                      </div>
+                      <div className="text-foreground font-medium text-sm group-hover:text-noki-primary transition-colors line-clamp-2">
+                        {assignment.title}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -202,7 +357,9 @@ export default function DashboardPage() {
               <TrendingUp size={20} />
               <span className="text-xs font-semibold">This Week</span>
             </div>
-            <div className="text-4xl font-bold mb-1">87%</div>
+            <div className="text-4xl font-bold mb-1">
+              {isLoading ? "..." : `${stats.completionRate}%`}
+            </div>
             <div className="text-sm text-white/90">Completion Rate</div>
           </div>
         </div>
@@ -216,7 +373,9 @@ export default function DashboardPage() {
               <FolderKanban size={20} />
               <span className="text-xs font-semibold">Active</span>
             </div>
-            <div className="text-4xl font-bold mb-1">{projects.length}</div>
+            <div className="text-4xl font-bold mb-1">
+              {isLoading ? "..." : stats.activeProjects}
+            </div>
             <div className="text-sm text-white/90">Projects</div>
           </div>
         </div>
@@ -296,25 +455,38 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {courses.map((course) => (
-              <Link key={course.id} href="/projects">
-                <div className="aspect-square">
-                  <div
-                    className={`${course.color} text-white p-4 rounded-2xl shadow-md relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2 border-white/20 h-full flex flex-col justify-end`}
-                  >
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500"></div>
-                    <div className="relative z-10">
-                      <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-bold inline-block mb-2">
-                        {course.code}
-                      </span>
-                      <h3 className="font-poppins font-bold text-sm leading-tight line-clamp-2">
-                        {course.name}
-                      </h3>
+            {isLoading ? (
+              <div className="col-span-2 text-center py-8 text-muted-foreground">
+                Loading courses...
+              </div>
+            ) : courses.length === 0 ? (
+              <div className="col-span-2 text-center py-8 text-muted-foreground">
+                No courses found
+              </div>
+            ) : (
+              courses.map((course) => (
+                <Link key={course.id} href="/projects">
+                  <div className="aspect-square">
+                    <div
+                      className="text-white p-4 rounded-2xl shadow-md relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2 border-white/20 h-full flex flex-col justify-end"
+                      style={{
+                        backgroundColor: course.colorHex || "#6366f1",
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500"></div>
+                      <div className="relative z-10">
+                        <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-bold inline-block mb-2">
+                          {course.code}
+                        </span>
+                        <h3 className="font-poppins font-bold text-sm leading-tight line-clamp-2">
+                          {course.name}
+                        </h3>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))
+            )}
           </div>
         </div>
 
@@ -337,37 +509,62 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {projects.map((project) => (
-              <Link key={project.id} href="/projects">
+            {isLoading ? (
+              <div className="col-span-2 text-center py-8 text-muted-foreground">
+                Loading projects...
+              </div>
+            ) : projects.length === 0 ? (
+              <>
                 <div className="aspect-square">
-                  <div
-                    className={`${project.color} text-white p-4 rounded-2xl shadow-md relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2 border-white/20 h-full flex flex-col justify-end`}
+                  <button
+                    onClick={() => setIsManageModalOpen(true)}
+                    className="bg-background hover:bg-blue-500/20 border-2 border-dashed border-border hover:border-blue-500 p-4 rounded-2xl transition-all duration-300 group h-full w-full flex items-center justify-center"
                   >
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500"></div>
-                    <div className="relative z-10">
-                      <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-bold inline-block mb-2">
-                        {project.status}
-                      </span>
-                      <h3 className="font-poppins font-bold text-sm leading-tight line-clamp-2">
-                        {project.name}
-                      </h3>
+                    <div className="flex items-center gap-2 text-muted-foreground group-hover:text-blue-500 transition-colors">
+                      <Plus size={16} />
+                      <span className="font-semibold text-xs">New Project</span>
                     </div>
-                  </div>
+                  </button>
                 </div>
-              </Link>
-            ))}
+              </>
+            ) : (
+              <>
+                {projects.map((project) => (
+                  <Link key={project.id} href="/projects">
+                    <div className="aspect-square">
+                      <div
+                        className="text-white p-4 rounded-2xl shadow-md relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2 border-white/20 h-full flex flex-col justify-end"
+                        style={{
+                          backgroundColor: project.colorHex || "#6366f1",
+                        }}
+                      >
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500"></div>
+                        <div className="relative z-10">
+                          <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-bold inline-block mb-2">
+                            {project.status}
+                          </span>
+                          <h3 className="font-poppins font-bold text-sm leading-tight line-clamp-2">
+                            {project.name}
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
 
-            <div className="aspect-square">
-              <button
-                onClick={() => setIsManageModalOpen(true)}
-                className="bg-background hover:bg-blue-500/20 border-2 border-dashed border-border hover:border-blue-500 p-4 rounded-2xl transition-all duration-300 group h-full w-full flex items-center justify-center"
-              >
-                <div className="flex items-center gap-2 text-muted-foreground group-hover:text-blue-500 transition-colors">
-                  <Plus size={16} />
-                  <span className="font-semibold text-xs">New Project</span>
+                <div className="aspect-square">
+                  <button
+                    onClick={() => setIsManageModalOpen(true)}
+                    className="bg-background hover:bg-blue-500/20 border-2 border-dashed border-border hover:border-blue-500 p-4 rounded-2xl transition-all duration-300 group h-full w-full flex items-center justify-center"
+                  >
+                    <div className="flex items-center gap-2 text-muted-foreground group-hover:text-blue-500 transition-colors">
+                      <Plus size={16} />
+                      <span className="font-semibold text-xs">New Project</span>
+                    </div>
+                  </button>
                 </div>
-              </button>
-            </div>
+              </>
+            )}
           </div>
         </div>
 

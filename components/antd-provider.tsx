@@ -161,6 +161,23 @@ export default function AntdProvider({ children }: AntdProviderProps) {
             titleMarginBottom: "0.5em",
             titleMarginTop: "1.2em",
           },
+
+          // Notification customization
+          Notification: {
+            borderRadius: 8,
+            padding: "16px 16px",
+            paddingContentHorizontal: 0,
+            paddingContentVertical: 0,
+            // Fix padding inconsistencies - ensure equal padding on all sides
+            paddingBlock: 16,
+            paddingInline: 16,
+            width: 384,
+            marginBlock: 8,
+            marginInline: 24,
+            // Message text alignment
+            descriptionMarginBottom: 0,
+            messageMarginBottom: 8,
+          },
         },
       }}
     >

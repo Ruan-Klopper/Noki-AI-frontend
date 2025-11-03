@@ -8,10 +8,12 @@ import {
   ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ManageProjectsModal } from "./manage-projects-modal";
 import { useMain } from "@/services/hooks/useMain";
+import { useTodo } from "@/services/hooks/useTodo";
+import { useTask } from "@/services/hooks/useTask";
 import {
   utcToLocalDateString,
   utcToLocalTimeString,
@@ -52,6 +54,8 @@ export default function TodosSidenav({
   console.log("[Todos Sidenav] Component rendering, isCollapsed:", isCollapsed);
 
   const { getDB } = useMain();
+  const { completeTodo, updateTodos } = useTodo();
+  const { completeTask, updateTask } = useTask();
   console.log("[Todos Sidenav] getDB function:", typeof getDB, getDB);
 
   const [todos, setTodos] = useState<DayGroup[]>([]);
@@ -63,6 +67,10 @@ export default function TodosSidenav({
   const [modalInitialTab, setModalInitialTab] = useState<"tasks" | "todos">(
     "todos"
   );
+  const [currentMascot, setCurrentMascot] = useState<
+    "neutral" | "celebration" | "panic"
+  >("neutral");
+  const [prevAllCompleted, setPrevAllCompleted] = useState(false);
 
   console.log("[Todos Sidenav] State:", {
     todosLength: todos.length,
@@ -139,209 +147,207 @@ export default function TodosSidenav({
   };
 
   // Fetch data from IndexedDB
+  const fetchData = async () => {
+    setIsLoading(true);
+    console.log("[Todos Sidenav] fetchData started");
+    try {
+      const db = getDB();
+      console.log("[Todos Sidenav] Got DB instance");
+      await db.init();
+      console.log("[Todos Sidenav] DB initialized");
+
+      console.log("[Todos Sidenav] Fetching data from IndexedDB...");
+
+      const [fetchedTasks, fetchedTodos, fetchedProjects] = await Promise.all([
+        db.getTasks(),
+        db.getTodos(),
+        db.getProjects(),
+      ]);
+
+      console.log("[Todos Sidenav] Fetched data:", {
+        tasks: fetchedTasks.length,
+        todos: fetchedTodos.length,
+        projects: fetchedProjects.length,
+      });
+
+      // Log sample data
+      if (fetchedTasks.length > 0) {
+        console.log("[Todos Sidenav] Sample task:", fetchedTasks[0]);
+      }
+      if (fetchedTodos.length > 0) {
+        console.log("[Todos Sidenav] Sample todo:", fetchedTodos[0]);
+      }
+      if (fetchedProjects.length > 0) {
+        console.log("[Todos Sidenav] Sample project:", fetchedProjects[0]);
+      }
+
+      // Process tasks
+      const formattedTasks: Todo[] = fetchedTasks.map((task: any) => {
+        const project = fetchedProjects.find(
+          (p: any) => p.id === task.project_id
+        );
+
+        const projectTitle = project?.title || project?.name || "General";
+        const courseCode =
+          project?.source === "Canvas" ? project?.course_code : null;
+        const projectDisplay = courseCode ? courseCode : projectTitle;
+
+        return {
+          id: task.id,
+          title: task.title || task.name || "Untitled Task",
+          project: projectDisplay,
+          projectTitle: projectTitle,
+          courseCode: courseCode,
+          time: formatTime(task.due_date || task.dueDate),
+          completed: task.is_submitted || false,
+          type: "task" as const,
+          dueDate: task.due_date || task.dueDate,
+          colorHex: project?.color_hex || null,
+          isOverdue: isOverdue(
+            task.due_date || task.dueDate,
+            task.is_submitted || false
+          ),
+        };
+      });
+
+      // Process todos
+      const formattedTodos: Todo[] = fetchedTodos.map((todo: any) => {
+        const task = fetchedTasks.find((t: any) => t.id === todo.task_id);
+        const project = task
+          ? fetchedProjects.find((p: any) => p.id === task.project_id)
+          : null;
+
+        const projectTitle = project?.title || project?.name || "General";
+        const courseCode =
+          project?.source === "Canvas" ? project?.course_code : null;
+        const projectDisplay = courseCode ? courseCode : projectTitle;
+
+        return {
+          id: todo.id,
+          title: todo.title || todo.name || "Untitled Todo",
+          project: projectDisplay,
+          projectTitle: projectTitle,
+          courseCode: courseCode,
+          time: formatTime(todo.due_date || todo.dueDate),
+          completed: todo.is_completed || false,
+          type: "todo" as const,
+          dueDate: todo.due_date || todo.dueDate,
+          colorHex: project?.color_hex || null,
+          isOverdue: isOverdue(
+            todo.due_date || todo.dueDate,
+            todo.is_completed || false
+          ),
+        };
+      });
+
+      // Combine and filter out items without due dates, then sort by due date
+      const allItems = [...formattedTasks, ...formattedTodos]
+        .filter((item) => item.dueDate) // Only include items with a due date
+        .sort((a, b) => {
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        });
+
+      console.log(
+        "[Todos Sidenav] Total items after formatting:",
+        allItems.length
+      );
+      console.log(
+        "[Todos Sidenav] Items with due dates:",
+        allItems.length,
+        "/ Total:",
+        formattedTasks.length + formattedTodos.length
+      );
+      if (allItems.length > 0) {
+        console.log("[Todos Sidenav] Sample formatted item:", allItems[0]);
+      }
+
+      // Group by day
+      const today = new Date();
+      const todayStr = dateToLocalDateString(today);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = dateToLocalDateString(tomorrow);
+      const weekEnd = new Date(today);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      const weekEndStr = dateToLocalDateString(weekEnd);
+
+      const todayGroup: DayGroup = {
+        day: "Today",
+        date: formatDate(today),
+        todos: [],
+      };
+
+      const tomorrowGroup: DayGroup = {
+        day: "Tomorrow",
+        date: formatDate(tomorrow),
+        todos: [],
+      };
+
+      const thisWeekGroup: DayGroup = {
+        day: "This Week",
+        date: `${formatDate(
+          new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)
+        )} - ${formatDate(weekEnd)}`,
+        todos: [],
+      };
+
+      console.log("[Todos Sidenav] Date strings:", {
+        today: todayStr,
+        tomorrow: tomorrowStr,
+        weekEnd: weekEndStr,
+      });
+
+      allItems.forEach((item) => {
+        const itemLocalDate = utcToLocalDateString(item.dueDate);
+        console.log(
+          `[Todos Sidenav] Item "${item.title}" date: ${itemLocalDate}`
+        );
+
+        if (itemLocalDate === todayStr) {
+          todayGroup.todos.push(item);
+          console.log(`  -> Added to TODAY`);
+        } else if (itemLocalDate === tomorrowStr) {
+          tomorrowGroup.todos.push(item);
+          console.log(`  -> Added to TOMORROW`);
+        } else if (itemLocalDate <= weekEndStr) {
+          thisWeekGroup.todos.push(item);
+          console.log(`  -> Added to THIS WEEK`);
+        } else {
+          console.log(
+            `  -> NOT ADDED (date ${itemLocalDate} is after ${weekEndStr})`
+          );
+        }
+      });
+
+      const groups: DayGroup[] = [];
+      if (todayGroup.todos.length > 0) groups.push(todayGroup);
+      if (tomorrowGroup.todos.length > 0) groups.push(tomorrowGroup);
+      if (thisWeekGroup.todos.length > 0) groups.push(thisWeekGroup);
+
+      console.log("[Todos Sidenav] Group counts:", {
+        today: todayGroup.todos.length,
+        tomorrow: tomorrowGroup.todos.length,
+        thisWeek: thisWeekGroup.todos.length,
+        totalGroups: groups.length,
+      });
+
+      setTodos(groups);
+
+      console.log("[Todos Sidenav] Data loaded successfully (Timezone: UTC+2)");
+      console.log(
+        "[Todos Sidenav] Final state set with groups:",
+        groups.length
+      );
+    } catch (error) {
+      console.error("[Todos Sidenav] Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch data on mount
   useEffect(() => {
     console.log("[Todos Sidenav] useEffect triggered!");
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      console.log("[Todos Sidenav] fetchData started");
-      try {
-        const db = getDB();
-        console.log("[Todos Sidenav] Got DB instance");
-        await db.init();
-        console.log("[Todos Sidenav] DB initialized");
-
-        console.log("[Todos Sidenav] Fetching data from IndexedDB...");
-
-        const [fetchedTasks, fetchedTodos, fetchedProjects] = await Promise.all(
-          [db.getTasks(), db.getTodos(), db.getProjects()]
-        );
-
-        console.log("[Todos Sidenav] Fetched data:", {
-          tasks: fetchedTasks.length,
-          todos: fetchedTodos.length,
-          projects: fetchedProjects.length,
-        });
-
-        // Log sample data
-        if (fetchedTasks.length > 0) {
-          console.log("[Todos Sidenav] Sample task:", fetchedTasks[0]);
-        }
-        if (fetchedTodos.length > 0) {
-          console.log("[Todos Sidenav] Sample todo:", fetchedTodos[0]);
-        }
-        if (fetchedProjects.length > 0) {
-          console.log("[Todos Sidenav] Sample project:", fetchedProjects[0]);
-        }
-
-        // Process tasks
-        const formattedTasks: Todo[] = fetchedTasks.map((task: any) => {
-          const project = fetchedProjects.find(
-            (p: any) => p.id === task.project_id
-          );
-
-          const projectTitle = project?.title || project?.name || "General";
-          const courseCode =
-            project?.source === "Canvas" ? project?.course_code : null;
-          const projectDisplay = courseCode ? courseCode : projectTitle;
-
-          return {
-            id: task.id,
-            title: task.title || task.name || "Untitled Task",
-            project: projectDisplay,
-            projectTitle: projectTitle,
-            courseCode: courseCode,
-            time: formatTime(task.due_date || task.dueDate),
-            completed: task.is_submitted || false,
-            type: "task" as const,
-            dueDate: task.due_date || task.dueDate,
-            colorHex: project?.color_hex || null,
-            isOverdue: isOverdue(
-              task.due_date || task.dueDate,
-              task.is_submitted || false
-            ),
-          };
-        });
-
-        // Process todos
-        const formattedTodos: Todo[] = fetchedTodos.map((todo: any) => {
-          const task = fetchedTasks.find((t: any) => t.id === todo.task_id);
-          const project = task
-            ? fetchedProjects.find((p: any) => p.id === task.project_id)
-            : null;
-
-          const projectTitle = project?.title || project?.name || "General";
-          const courseCode =
-            project?.source === "Canvas" ? project?.course_code : null;
-          const projectDisplay = courseCode ? courseCode : projectTitle;
-
-          return {
-            id: todo.id,
-            title: todo.title || todo.name || "Untitled Todo",
-            project: projectDisplay,
-            projectTitle: projectTitle,
-            courseCode: courseCode,
-            time: formatTime(todo.due_date || todo.dueDate),
-            completed: todo.is_completed || false,
-            type: "todo" as const,
-            dueDate: todo.due_date || todo.dueDate,
-            colorHex: project?.color_hex || null,
-            isOverdue: isOverdue(
-              todo.due_date || todo.dueDate,
-              todo.is_completed || false
-            ),
-          };
-        });
-
-        // Combine and filter out items without due dates, then sort by due date
-        const allItems = [...formattedTasks, ...formattedTodos]
-          .filter((item) => item.dueDate) // Only include items with a due date
-          .sort((a, b) => {
-            return (
-              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-            );
-          });
-
-        console.log(
-          "[Todos Sidenav] Total items after formatting:",
-          allItems.length
-        );
-        console.log(
-          "[Todos Sidenav] Items with due dates:",
-          allItems.length,
-          "/ Total:",
-          formattedTasks.length + formattedTodos.length
-        );
-        if (allItems.length > 0) {
-          console.log("[Todos Sidenav] Sample formatted item:", allItems[0]);
-        }
-
-        // Group by day
-        const today = new Date();
-        const todayStr = dateToLocalDateString(today);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = dateToLocalDateString(tomorrow);
-        const weekEnd = new Date(today);
-        weekEnd.setDate(weekEnd.getDate() + 7);
-        const weekEndStr = dateToLocalDateString(weekEnd);
-
-        const todayGroup: DayGroup = {
-          day: "Today",
-          date: formatDate(today),
-          todos: [],
-        };
-
-        const tomorrowGroup: DayGroup = {
-          day: "Tomorrow",
-          date: formatDate(tomorrow),
-          todos: [],
-        };
-
-        const thisWeekGroup: DayGroup = {
-          day: "This Week",
-          date: `${formatDate(
-            new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)
-          )} - ${formatDate(weekEnd)}`,
-          todos: [],
-        };
-
-        console.log("[Todos Sidenav] Date strings:", {
-          today: todayStr,
-          tomorrow: tomorrowStr,
-          weekEnd: weekEndStr,
-        });
-
-        allItems.forEach((item) => {
-          const itemLocalDate = utcToLocalDateString(item.dueDate);
-          console.log(
-            `[Todos Sidenav] Item "${item.title}" date: ${itemLocalDate}`
-          );
-
-          if (itemLocalDate === todayStr) {
-            todayGroup.todos.push(item);
-            console.log(`  -> Added to TODAY`);
-          } else if (itemLocalDate === tomorrowStr) {
-            tomorrowGroup.todos.push(item);
-            console.log(`  -> Added to TOMORROW`);
-          } else if (itemLocalDate <= weekEndStr) {
-            thisWeekGroup.todos.push(item);
-            console.log(`  -> Added to THIS WEEK`);
-          } else {
-            console.log(
-              `  -> NOT ADDED (date ${itemLocalDate} is after ${weekEndStr})`
-            );
-          }
-        });
-
-        const groups: DayGroup[] = [];
-        if (todayGroup.todos.length > 0) groups.push(todayGroup);
-        if (tomorrowGroup.todos.length > 0) groups.push(tomorrowGroup);
-        if (thisWeekGroup.todos.length > 0) groups.push(thisWeekGroup);
-
-        console.log("[Todos Sidenav] Group counts:", {
-          today: todayGroup.todos.length,
-          tomorrow: tomorrowGroup.todos.length,
-          thisWeek: thisWeekGroup.todos.length,
-          totalGroups: groups.length,
-        });
-
-        setTodos(groups);
-
-        console.log(
-          "[Todos Sidenav] Data loaded successfully (Timezone: UTC+2)"
-        );
-        console.log(
-          "[Todos Sidenav] Final state set with groups:",
-          groups.length
-        );
-      } catch (error) {
-        console.error("[Todos Sidenav] Error fetching data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on mount
@@ -353,29 +359,188 @@ export default function TodosSidenav({
       .map((todo) => ({ ...todo, day: group.day, groupIndex }))
   );
 
-  const toggleTodoComplete = (dayIndex: number, todoId: string) => {
-    setTodos((prev) =>
-      prev.map((group, idx) =>
-        idx === dayIndex
-          ? {
-              ...group,
-              todos: group.todos.map((todo) =>
-                todo.id === todoId
-                  ? { ...todo, completed: !todo.completed }
-                  : todo
-              ),
-            }
-          : group
-      )
-    );
-  };
-
   // Calculate today's progress
   const todayTodos = todos.find((g) => g.day === "Today")?.todos || [];
   const completedToday = todayTodos.filter((todo) => todo.completed).length;
   const totalToday = todayTodos.length;
+  const allTasksCompleted = totalToday > 0 && completedToday === totalToday;
+  const hasOverdueTasks = overdueTodos.length > 0;
+
+  // Mascot GIF logic - Celebration (takes priority)
+  useEffect(() => {
+    // Only show celebration when transitioning from not-completed to all-completed
+    if (allTasksCompleted && totalToday > 0 && !prevAllCompleted) {
+      setCurrentMascot("celebration");
+      const celebrationTimer = setTimeout(() => {
+        setCurrentMascot("neutral");
+      }, 10000);
+      setPrevAllCompleted(true);
+      return () => clearTimeout(celebrationTimer);
+    } else if (!allTasksCompleted) {
+      // Reset the previous state when tasks become incomplete again
+      setPrevAllCompleted(false);
+    }
+  }, [allTasksCompleted, totalToday, prevAllCompleted]);
+
+  // Overdue tasks logic - show panic gif for 5 seconds, loop every 30 minutes
+  const panicTimersRef = useRef<NodeJS.Timeout[]>([]);
+
+  useEffect(() => {
+    // Clear any existing timers
+    panicTimersRef.current.forEach((timer) => clearTimeout(timer));
+    panicTimersRef.current = [];
+
+    if (!hasOverdueTasks) {
+      // If no overdue tasks, ensure we're not showing panic
+      setCurrentMascot((prev) => (prev === "panic" ? "neutral" : prev));
+      return;
+    }
+
+    const cyclePanic = () => {
+      // Show panic (only if not celebrating)
+      setCurrentMascot((prev) => {
+        if (prev === "celebration") return prev;
+        return "panic";
+      });
+
+      // After 5 seconds, return to neutral
+      const panicTimer = setTimeout(() => {
+        setCurrentMascot((prev) => {
+          if (prev === "celebration") return prev;
+          return "neutral";
+        });
+
+        // After 30 minutes total (from the start of this cycle), show panic again
+        const nextPanicTimer = setTimeout(() => {
+          cyclePanic();
+        }, 30 * 60 * 1000 - 10000); // 30 minutes minus the 5 seconds we just waited
+
+        panicTimersRef.current.push(nextPanicTimer);
+      }, 5000);
+
+      panicTimersRef.current.push(panicTimer);
+    };
+
+    // Start the cycle immediately
+    cyclePanic();
+
+    return () => {
+      panicTimersRef.current.forEach((timer) => clearTimeout(timer));
+      panicTimersRef.current = [];
+    };
+  }, [hasOverdueTasks]);
+
+  const toggleTodoComplete = async (
+    dayIndex: number,
+    todoId: string,
+    todoType: "todo" | "task"
+  ) => {
+    // Find the current todo/task to check its completion status
+    const currentTodo = todos
+      .flatMap((group) => group.todos)
+      .find((todo) => todo.id === todoId);
+
+    if (!currentTodo) {
+      console.error("[Todos Sidenav] Todo/task not found:", todoId);
+      return;
+    }
+
+    const isCurrentlyCompleted = currentTodo.completed;
+
+    try {
+      // Optimistically update UI
+      setTodos((prev) =>
+        prev.map((group, idx) =>
+          idx === dayIndex
+            ? {
+                ...group,
+                todos: group.todos.map((todo) =>
+                  todo.id === todoId
+                    ? { ...todo, completed: !todo.completed }
+                    : todo
+                ),
+              }
+            : group
+        )
+      );
+
+      // Call backend API to complete/uncomplete
+      let response;
+      if (todoType === "todo") {
+        if (isCurrentlyCompleted) {
+          // Uncomplete todo - use updateTodos with is_submitted: false
+          response = await updateTodos([todoId], { is_submitted: false });
+        } else {
+          // Complete todo
+          response = await completeTodo(todoId);
+        }
+      } else if (todoType === "task") {
+        if (isCurrentlyCompleted) {
+          // Uncomplete task - use updateTask with is_submitted: false
+          response = await updateTask(todoId, { is_submitted: false });
+        } else {
+          // Complete task
+          response = await completeTask(todoId);
+        }
+      }
+
+      if (response && response.success) {
+        // Refresh data from IndexedDB to ensure sync
+        await fetchData();
+      } else {
+        // Revert optimistic update on failure
+        setTodos((prev) =>
+          prev.map((group, idx) =>
+            idx === dayIndex
+              ? {
+                  ...group,
+                  todos: group.todos.map((todo) =>
+                    todo.id === todoId
+                      ? { ...todo, completed: !todo.completed }
+                      : todo
+                  ),
+                }
+              : group
+          )
+        );
+      }
+    } catch (error) {
+      console.error(
+        "[Todos Sidenav] Error toggling todo/task completion:",
+        error
+      );
+      // Revert optimistic update on error
+      setTodos((prev) =>
+        prev.map((group, idx) =>
+          idx === dayIndex
+            ? {
+                ...group,
+                todos: group.todos.map((todo) =>
+                  todo.id === todoId
+                    ? { ...todo, completed: !todo.completed }
+                    : todo
+                ),
+              }
+            : group
+        )
+      );
+    }
+  };
+
   const progressPercentage =
     totalToday > 0 ? (completedToday / totalToday) * 100 : 0;
+
+  // Get the current mascot GIF path
+  const getMascotGif = () => {
+    switch (currentMascot) {
+      case "celebration":
+        return "/mascot/Noki_Celebration.gif";
+      case "panic":
+        return "/mascot/Noki_Panic.gif";
+      default:
+        return "/mascot/Noki_Neutral.gif";
+    }
+  };
 
   // Filter todos based on active filter
   const filteredTodos = todos
@@ -422,8 +587,14 @@ export default function TodosSidenav({
               isCollapsed ? "h-12" : "h-32"
             )}
           >
-            <div className="w-full h-full flex items-center justify-center text-white font-poppins font-bold text-2xl">
-              NOKI
+            <div className="w-full h-full flex items-center justify-center relative">
+              <Image
+                src={getMascotGif()}
+                alt="Noki mascot"
+                fill
+                className="object-cover"
+                unoptimized
+              />
             </div>
           </div>
 
@@ -537,7 +708,11 @@ export default function TodosSidenav({
                         <div
                           key={todo.id}
                           onClick={() =>
-                            toggleTodoComplete(todo.groupIndex!, todo.id)
+                            toggleTodoComplete(
+                              todo.groupIndex!,
+                              todo.id,
+                              todo.type
+                            )
                           }
                           className="group p-2 rounded-lg border-2 border-red-500 bg-red-500/10 hover:bg-red-500/20 hover:shadow-lg hover:shadow-red-500/20 transition-all duration-200 cursor-pointer"
                         >
@@ -599,7 +774,7 @@ export default function TodosSidenav({
                           <div
                             key={todo.id}
                             onClick={() =>
-                              toggleTodoComplete(groupIndex, todo.id)
+                              toggleTodoComplete(groupIndex, todo.id, todo.type)
                             }
                             className={cn(
                               "group p-2 rounded-lg border transition-all duration-200 cursor-pointer",
@@ -777,8 +952,14 @@ export default function TodosSidenav({
         {/* Use same content as desktop */}
         <div className="sticky top-0 bg-card border-b border-border z-10">
           <div className="relative h-24 overflow-hidden bg-noki-primary">
-            <div className="w-full h-full flex items-center justify-center text-white font-poppins font-bold text-2xl">
-              NOKI
+            <div className="w-full h-full flex items-center justify-center relative">
+              <Image
+                src={getMascotGif()}
+                alt="Noki mascot"
+                fill
+                className="object-contain"
+                unoptimized
+              />
             </div>
           </div>
 

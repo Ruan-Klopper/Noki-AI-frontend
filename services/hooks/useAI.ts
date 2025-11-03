@@ -23,7 +23,7 @@ import { notificationService } from "../notification/notification.service";
  * - Rename conversation
  * - Delete conversation
  *
- * Automatically shows Ant Design notifications for success/error states
+ * Automatically shows Ant Design error notifications on failure
  *
  * @returns AI service methods and loading/error state
  */
@@ -34,8 +34,7 @@ export const useAI = () => {
 
   /**
    * Get all conversations for the current user
-   * - Shows loading notification
-   * - Shows success/error notification
+   * - Shows error notification on failure
    */
   const getAllConversations = useCallback(async (): Promise<ApiResponse<
     Conversation[]
@@ -43,14 +42,8 @@ export const useAI = () => {
     setLoading(true);
     setError(null);
 
-    // Show loading notification
-    notificationService.info("Loading conversations...", "Please wait", 0);
-
     try {
       const response = await aiService.getAllConversations();
-
-      // Destroy loading notification
-      notificationService.destroy();
 
       if (response.success) {
         return response;
@@ -62,7 +55,6 @@ export const useAI = () => {
       );
       return response;
     } catch (err: any) {
-      notificationService.destroy();
       const errorMessage =
         err?.message || "Failed to load conversations. Please try again.";
       setError(errorMessage);
@@ -76,8 +68,7 @@ export const useAI = () => {
 
   /**
    * Get conversation history for a specific conversation
-   * - Shows loading notification
-   * - Shows success/error notification
+   * - Shows error notification on failure
    */
   const getConversationHistory = useCallback(
     async (
@@ -86,14 +77,8 @@ export const useAI = () => {
       setLoading(true);
       setError(null);
 
-      // Show loading notification
-      notificationService.info("Loading conversation...", "Please wait", 0);
-
       try {
         const response = await aiService.getConversationHistory(conversationId);
-
-        // Destroy loading notification
-        notificationService.destroy();
 
         if (response.success) {
           return response;
@@ -105,7 +90,6 @@ export const useAI = () => {
         );
         return response;
       } catch (err: any) {
-        notificationService.destroy();
         const errorMessage =
           err?.message || "Failed to load conversation. Please try again.";
         setError(errorMessage);
@@ -121,30 +105,17 @@ export const useAI = () => {
 
   /**
    * Create a new conversation
-   * - Shows loading notification
-   * - Shows success/error notification
+   * - Shows error notification on failure
    */
   const newConversation =
     useCallback(async (): Promise<ApiResponse<NewConversationResponse> | null> => {
       setLoading(true);
       setError(null);
 
-      // Show loading notification
-      notificationService.info("Creating conversation...", "Please wait", 0);
-
       try {
         const response = await aiService.newConversation();
 
-        // Destroy loading notification
-        notificationService.destroy();
-
         if (response.success) {
-          // Show success notification
-          notificationService.success(
-            "Conversation created!",
-            "You can now start chatting"
-          );
-
           return response;
         }
 
@@ -154,7 +125,6 @@ export const useAI = () => {
         );
         return response;
       } catch (err: any) {
-        notificationService.destroy();
         const errorMessage =
           err?.message || "Failed to create conversation. Please try again.";
         setError(errorMessage);
@@ -168,9 +138,7 @@ export const useAI = () => {
 
   /**
    * Send a chat message and get AI response
-   * - Shows loading notification
    * - Shows error notification on failure
-   * - Returns response without success notification (to avoid interrupting chat flow)
    */
   const chat = useCallback(
     async (data: ChatRequest): Promise<ApiResponse<ChatResponse> | null> => {
@@ -205,8 +173,7 @@ export const useAI = () => {
 
   /**
    * Rename a conversation
-   * - Shows loading notification
-   * - Shows success/error notification
+   * - Shows error notification on failure
    */
   const renameConversation = useCallback(
     async (
@@ -216,25 +183,13 @@ export const useAI = () => {
       setLoading(true);
       setError(null);
 
-      // Show loading notification
-      notificationService.info("Renaming conversation...", "Please wait", 0);
-
       try {
         const response = await aiService.renameConversation(
           conversationId,
           title
         );
 
-        // Destroy loading notification
-        notificationService.destroy();
-
         if (response.success) {
-          // Show success notification
-          notificationService.success(
-            "Conversation renamed!",
-            `Renamed to "${response.data.title}"`
-          );
-
           return response;
         }
 
@@ -244,7 +199,6 @@ export const useAI = () => {
         );
         return response;
       } catch (err: any) {
-        notificationService.destroy();
         const errorMessage =
           err?.message || "Failed to rename conversation. Please try again.";
         setError(errorMessage);
@@ -260,8 +214,7 @@ export const useAI = () => {
 
   /**
    * Delete a conversation
-   * - Shows loading notification
-   * - Shows success/error notification
+   * - Shows error notification on failure
    */
   const deleteConversation = useCallback(
     async (
@@ -270,22 +223,10 @@ export const useAI = () => {
       setLoading(true);
       setError(null);
 
-      // Show loading notification
-      notificationService.info("Deleting conversation...", "Please wait", 0);
-
       try {
         const response = await aiService.deleteConversation(conversationId);
 
-        // Destroy loading notification
-        notificationService.destroy();
-
         if (response.success) {
-          // Show success notification
-          notificationService.success(
-            "Conversation deleted!",
-            response.data.message
-          );
-
           return response;
         }
 
@@ -295,7 +236,6 @@ export const useAI = () => {
         );
         return response;
       } catch (err: any) {
-        notificationService.destroy();
         const errorMessage =
           err?.message || "Failed to delete conversation. Please try again.";
         setError(errorMessage);
