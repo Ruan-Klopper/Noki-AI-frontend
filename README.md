@@ -171,17 +171,11 @@ Help us improve Noki AI by participating in our user testing:
 
 ### Architecture Overview
 
-```
-Frontend (app.noki.co.za - Vercel)
-    ↓
-Backend API (youdidnttest.noki.co.za - Railway)
-    ↓
-AI Server (noidea.noki.co.za - Railway)
-    ↓
-PostgreSQL Database (Railway)
-```
+<div align="center">
 
----
+![Architecture Diagram](./architecture_layout.png)
+
+</div>
 
 ---
 
@@ -190,12 +184,59 @@ PostgreSQL Database (Railway)
 <div align="center">
 
 **An intelligent time management and productivity platform powered by AI - Frontend Implementation**
-
+</br>
+</br>
+**_By Ruan Klopper_**
+</br>
+**_Student no: 231280_**
+</br>
+</br>
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-app.noki.co.za-blue)](https://app.noki.co.za)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-black?logo=github)](https://github.com/Ruan-Klopper/Noki-AI-frontend)
 [![License](https://img.shields.io/badge/License-Private-red)](LICENSE)
 
-_Built with ❤️ by [Ruan Klopper](https://github.com/Ruan-Klopper)_
+</div>
+
+<div align="start">
+
+### Tech Stack
+
+**Core Framework**
+<br>
+![Next.js](https://img.shields.io/badge/Next.js-14.2-black?style=for-the-badge&logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+
+**Styling & UI**
+<br>
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-Radix_UI-000000?style=for-the-badge&logo=radix-ui&logoColor=white)
+![Ant Design](https://img.shields.io/badge/Ant_Design-5.27-0170FE?style=for-the-badge&logo=ant-design&logoColor=white)
+![Lucide](https://img.shields.io/badge/Lucide-Icons-F56565?style=for-the-badge&logo=lucide&logoColor=white)
+
+**Forms & Validation**
+<br>
+![React Hook Form](https://img.shields.io/badge/React_Hook_Form-7.60-EC5990?style=for-the-badge&logo=react-hook-form&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-3.25-3E63DD?style=for-the-badge&logo=zod&logoColor=white)
+
+**Date & Time**
+<br>
+![date-fns](https://img.shields.io/badge/date--fns-4.1-6BA39F?style=for-the-badge)
+![dayjs](https://img.shields.io/badge/dayjs-1.11-FF6B6B?style=for-the-badge)
+
+**Storage & Data**
+<br>
+![IndexedDB](https://img.shields.io/badge/IndexedDB-Client_DB-FFA500?style=for-the-badge&logo=indexeddb&logoColor=white)
+![Recharts](https://img.shields.io/badge/Recharts-2.15-8884D8?style=for-the-badge)
+
+**Deployment**
+<br>
+![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)
+
+**Additional Tools**
+<br>
+![PostCSS](https://img.shields.io/badge/PostCSS-8.5-DD3A0A?style=for-the-badge&logo=postcss&logoColor=white)
+![ESLint](https://img.shields.io/badge/ESLint-Linting-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)
 
 </div>
 
