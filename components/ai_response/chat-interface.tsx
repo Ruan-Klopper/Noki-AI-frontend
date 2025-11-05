@@ -43,6 +43,7 @@ export function ChatInterface() {
     addMessage,
     refreshMessages,
     addConversation,
+    setIsLoading,
   } = useConversationContext();
   const { chat, newConversation, loading: aiLoading } = useAI();
   const { getDB } = useMain();
@@ -299,6 +300,9 @@ export function ChatInterface() {
     setInputValue("");
     setIsSending(true);
 
+    // Set loading state immediately to show the AI thinking loader
+    setIsLoading(true);
+
     // Prepare context data - only send IDs
     const projectIds = selectedProjects.map((p) => ({ project_id: p.id }));
     const taskIds = selectedTasks.map((t) => ({ task_id: t.id }));
@@ -338,6 +342,7 @@ export function ChatInterface() {
       console.error("Error sending message:", error);
     } finally {
       setIsSending(false);
+      setIsLoading(false);
     }
   };
 

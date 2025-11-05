@@ -135,7 +135,11 @@ export function ChatArea() {
           );
         }
       })}
-      {isLoading && <AiThinkingLoader />}
+      {isLoading && (
+        <div className="space-y-3">
+          <AiThinkingLoader />
+        </div>
+      )}
     </div>
   );
 }

@@ -18,6 +18,7 @@ interface ConversationContextType {
   refreshMessages: () => Promise<void>;
   addMessage: (message: ConversationMessage) => void;
   addConversation: (conversation: Conversation) => void;
+  setIsLoading: (loading: boolean) => void;
 }
 
 const ConversationContext = createContext<ConversationContextType | undefined>(
@@ -191,6 +192,7 @@ export function ConversationProvider({
         refreshMessages,
         addMessage,
         addConversation,
+        setIsLoading,
       }}
     >
       {children}
