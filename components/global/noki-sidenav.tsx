@@ -176,10 +176,12 @@ export default function NokiSidenav({
       >
         <div className="p-4 border-b border-border flex items-center justify-start px-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-noki-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-poppins font-bold text-lg">
-                N
-              </span>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+              <img
+                src="/mascot/Noki_Thinking.gif"
+                alt="Noki Thinking"
+                className="w-full h-full object-cover"
+              />
             </div>
             {!isCollapsed && (
               <span className="font-poppins font-bold text-xl text-noki-primary">

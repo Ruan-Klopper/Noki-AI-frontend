@@ -67,7 +67,7 @@ export function ChatArea() {
                 <div className="flex-1 space-y-4">
                   {/* Display text with markdown parsing */}
                   {message.text && (
-                    <div className="text-gray-100 font-roboto leading-relaxed pb-4">
+                    <div className="text-gray-100 font-roboto leading-relaxed pb-4 mt-[-5px]">
                       <MarkdownText text={message.text} />
                     </div>
                   )}

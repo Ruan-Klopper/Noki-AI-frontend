@@ -19,9 +19,9 @@ export function AssignmentExplanation({
       <div className="p-6 space-y-4">
         <div className="flex items-center space-x-2">
           <BookOpen className="h-5 w-5 text-noki-primary" />
-          <h3 className="font-poppins font-bold text-gray-100 text-lg">
-            {title}
-          </h3>
+          <div className="font-poppins font-bold text-gray-100 text-lg pt-[50px]">
+            {title} test
+          </div>
         </div>
 
         {description && (
