@@ -269,7 +269,8 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl h-64 bg-gradient-to-br from-noki-primary via-noki-tertiary to-purple-600 border-2 border-white/10">
+      {/* Removed for now, functionality to be implemented later */}
+      {/* <div className="relative rounded-3xl overflow-hidden shadow-2xl h-64 bg-gradient-to-br from-noki-primary via-noki-tertiary to-purple-600 border-2 border-white/10">
         <img
           src="/cute-teal-character-in-landscape-with-clouds-and-t.jpg"
           alt="Noki character in landscape"
@@ -292,7 +293,7 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[minmax(200px,auto)]">
         {/* Upcoming Tasks - Large card spanning 2 columns and 2 rows */}

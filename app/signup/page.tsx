@@ -413,7 +413,7 @@ export default function SignUpPage() {
           key={step}
           className="bg-card rounded-2xl shadow-xl p-8 relative pb-28 animate-in fade-in zoom-in duration-300"
         >
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="flex items-center justify-center gap-2 mb-6">
             {[1, 2, 3, 4, 5].map((s) => (
               <div
                 key={s}
@@ -428,6 +428,17 @@ export default function SignUpPage() {
             ))}
           </div>
 
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
+              <img
+                src="/mascot/Noki_Welcome.gif"
+                alt="Noki Welcome"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
           {/* Step 1: Terms and Conditions */}
           {step === 1 && (
             <div className="space-y-6">
@@ -435,9 +446,9 @@ export default function SignUpPage() {
                 <h1 className="text-3xl font-poppins font-bold text-foreground mb-2">
                   Welcome to Noki
                 </h1>
-                <p className="text-muted-foreground font-roboto">
+                <div className="text-muted-foreground font-roboto">
                   Let's get you set up
-                </p>
+                </div>
               </div>
 
               <div className="bg-secondary rounded-xl p-6 border border-border">
@@ -817,10 +828,15 @@ export default function SignUpPage() {
                 </p>
               </div>
 
-              <div className="bg-secondary rounded-xl h-48 flex items-center justify-center">
-                <span className="text-muted-foreground font-roboto">
-                  Canvas Setup Demo Image
-                </span>
+              <div className="bg-secondary rounded-xl h-48 overflow-hidden flex items-center justify-center">
+                <video
+                  src="/NokiCanvasSetup.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               <div className="space-y-4">

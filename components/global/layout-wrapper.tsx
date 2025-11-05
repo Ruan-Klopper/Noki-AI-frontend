@@ -7,7 +7,6 @@ import NokiSidenav from "./noki-sidenav";
 import TodosSidenav from "./todos-sidenav";
 import ContentArea from "./content-area";
 import { SidenavProvider } from "./sidenav-context";
-import DevNav from "./dev-nav";
 import { AuthProvider } from "@/services/auth/auth-context";
 
 interface LayoutWrapperProps {
@@ -63,7 +62,6 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   return (
     <AuthProvider>
       <div className="flex flex-col md:flex-row h-screen bg-background">
-        <DevNav />
         <SidenavProvider
           isSidenavCollapsed={isSidenavCollapsed}
           isRightSidenavCollapsed={isRightSidenavCollapsed}

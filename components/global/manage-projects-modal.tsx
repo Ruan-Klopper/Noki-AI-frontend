@@ -105,7 +105,7 @@ export function ManageProjectsModal({
   const [projectType, setProjectType] = useState<ProjectType>("personal");
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
-  const [projectColor, setProjectColor] = useState("bg-noki-primary");
+  const [projectColor, setProjectColor] = useState("#1d72a6");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskProject, setTaskProject] = useState("");
   const [taskDueDateTime, setTaskDueDateTime] = useState<Date | undefined>(
@@ -124,6 +124,55 @@ export function ManageProjectsModal({
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Color mapping from display names to hex codes
+  const colorMap: Record<string, string> = {
+    "bg-noki-primary": "#1d72a6", // Noki primary blue
+    "bg-noki-tertiary": "#4a90a4", // Noki tertiary
+    "bg-orange-400": "#fb923c",
+    "bg-purple-400": "#c084fc",
+    "bg-blue-400": "#60a5fa",
+    "bg-green-400": "#4ade80",
+    "bg-pink-400": "#f472b6",
+    "bg-yellow-400": "#facc15",
+    "bg-red-400": "#f87171",
+    "bg-teal-400": "#2dd4bf",
+    "bg-cyan-400": "#22d3ee",
+    "bg-indigo-400": "#818cf8",
+  };
+
+  // Color options as hex codes
+  const colorOptions = [
+    "#1d72a6", // Noki primary blue
+    "#4a90a4", // Noki tertiary
+    "#fb923c", // Orange
+    "#c084fc", // Purple
+    "#60a5fa", // Blue
+    "#4ade80", // Green
+    "#f472b6", // Pink
+    "#facc15", // Yellow
+    "#f87171", // Red
+    "#2dd4bf", // Teal
+    "#22d3ee", // Cyan
+    "#818cf8", // Indigo
+  ];
+
+  // Helper function to convert class name to hex code
+  const classToHex = (colorClass: string): string => {
+    if (!colorClass) return "#1d72a6";
+    if (colorClass.startsWith("#")) {
+      return colorClass; // Already a hex code
+    }
+    return colorMap[colorClass] || "#1d72a6"; // Default to noki-primary if not found
+  };
+
+  // Helper function to add opacity to hex color
+  const hexWithOpacity = (hex: string, opacity: number): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
 
   // Function to refresh data from IndexedDB
   const refreshData = async () => {
@@ -157,8 +206,8 @@ export function ManageProjectsModal({
           id: project.id,
           name: project.title || project.name || "Untitled Project",
           description: project.description || "",
-          color: project.color_hex || "bg-noki-primary",
-          colorHex: project.color_hex,
+          color: classToHex(project.color_hex || project.color || "#1d72a6"),
+          colorHex: classToHex(project.color_hex || project.color || "#1d72a6"),
           type: "personal" as const,
         }))
       );
@@ -168,8 +217,8 @@ export function ManageProjectsModal({
           id: project.id,
           name: project.title || project.name || "Untitled Course",
           code: project.course_code || "",
-          color: project.color_hex || "bg-blue-400",
-          colorHex: project.color_hex,
+          color: classToHex(project.color_hex || project.color || "#60a5fa"),
+          colorHex: classToHex(project.color_hex || project.color || "#60a5fa"),
           type: "canvas" as const,
         }))
       );
@@ -265,21 +314,6 @@ export function ManageProjectsModal({
     }
   };
 
-  const colorOptions = [
-    "bg-noki-primary",
-    "bg-noki-tertiary",
-    "bg-orange-400",
-    "bg-purple-400",
-    "bg-blue-400",
-    "bg-green-400",
-    "bg-pink-400",
-    "bg-yellow-400",
-    "bg-red-400",
-    "bg-teal-400",
-    "bg-cyan-400",
-    "bg-indigo-400",
-  ];
-
   useEffect(() => {
     if (!isOpen) {
       resetForm();
@@ -297,7 +331,7 @@ export function ManageProjectsModal({
   const resetForm = () => {
     setProjectName("");
     setProjectDescription("");
-    setProjectColor("bg-noki-primary");
+    setProjectColor("#1d72a6");
     setTaskTitle("");
     setTaskProject("");
     setTaskDueDateTime(undefined);
@@ -478,7 +512,10 @@ export function ManageProjectsModal({
     setEditingId(project.id);
     setProjectName(project.name);
     setProjectDescription(project.description || "");
-    setProjectColor(project.color);
+    // Convert class name to hex code if needed
+    setProjectColor(
+      classToHex(project.color || project.color_hex || "#1d72a6")
+    );
     setProjectType(project.type);
     setShowAddForm(false);
   };
@@ -830,14 +867,13 @@ export function ManageProjectsModal({
                               <button
                                 key={color}
                                 onClick={() => setProjectColor(color)}
-                                className={`h-12 rounded-lg ${color} transition-all ${
+                                style={{ backgroundColor: color }}
+                                className={`h-12 rounded-lg transition-all ${
                                   projectColor === color
                                     ? "ring-2 ring-foreground/50 scale-105 shadow-lg"
                                     : "hover:scale-105 hover:shadow-md"
                                 }`}
-                                title={color
-                                  .replace("bg-", "")
-                                  .replace("-", " ")}
+                                title={color}
                               />
                             ))}
                           </div>
@@ -890,18 +926,18 @@ export function ManageProjectsModal({
                             hoverable
                             className="h-full border-2 hover:border-noki-primary/30 transition-all"
                             style={{
-                              borderColor: project.color
-                                .replace("bg-", "")
-                                .replace("-400", "-200"),
-                              backgroundColor: `${project.color
-                                .replace("bg-", "")
-                                .replace("-400", "-50")}10`,
+                              borderColor: project.color,
+                              backgroundColor: hexWithOpacity(
+                                project.color,
+                                0.1
+                              ),
                             }}
                           >
                             <div className="flex items-start gap-3 mb-3">
                               <Avatar
                                 size={36}
-                                className={`${project.color} flex items-center justify-center shadow-sm`}
+                                style={{ backgroundColor: project.color }}
+                                className="flex items-center justify-center shadow-sm"
                                 icon={
                                   project.type === "personal" ? (
                                     <FolderOutlined />
@@ -1064,7 +1100,10 @@ export function ManageProjectsModal({
                                   >
                                     <div className="flex items-center gap-2">
                                       <div
-                                        className={`w-3 h-3 ${project.color} rounded-full`}
+                                        style={{
+                                          backgroundColor: project.color,
+                                        }}
+                                        className="w-3 h-3 rounded-full"
                                       />
                                       {project.name}
                                     </div>
@@ -1135,19 +1174,19 @@ export function ManageProjectsModal({
                           key={project.id}
                           className="border-2 hover:border-noki-primary/30 transition-all"
                           style={{
-                            borderColor: project.color
-                              .replace("bg-", "")
-                              .replace("-400", "-200"),
-                            backgroundColor: `${project.color
-                              .replace("bg-", "")
-                              .replace("-400", "-50")}05`,
+                            borderColor: project.color,
+                            backgroundColor: hexWithOpacity(
+                              project.color,
+                              0.05
+                            ),
                           }}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <Avatar
                                 size={28}
-                                className={`${project.color} flex items-center justify-center shadow-sm`}
+                                style={{ backgroundColor: project.color }}
+                                className="flex items-center justify-center shadow-sm"
                                 icon={
                                   project.type === "personal" ? (
                                     <FolderOutlined />

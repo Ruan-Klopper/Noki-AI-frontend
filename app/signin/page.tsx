@@ -107,19 +107,21 @@ export default function SignInPage() {
         <div className="bg-card rounded-2xl shadow-xl p-8 animate-in fade-in zoom-in duration-300">
           {/* Logo */}
           <div className="flex justify-center mb-8">
-            <div className="w-16 h-16 bg-noki-primary rounded-xl flex items-center justify-center">
-              <span className="text-white font-poppins font-bold text-2xl">
-                N
-              </span>
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
+              <img
+                src="/mascot/Noki_Welcome.gif"
+                alt="Noki Welcome"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
 
           <h1 className="text-3xl font-poppins font-bold text-foreground text-center mb-2">
             Welcome back
           </h1>
-          <p className="text-muted-foreground font-roboto text-center mb-8">
+          <div className="text-muted-foreground font-roboto text-center mb-8">
             Sign in to continue to Noki
-          </p>
+          </div>
 
           {error && (
             <Alert
